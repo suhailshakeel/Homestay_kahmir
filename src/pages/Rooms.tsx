@@ -13,7 +13,7 @@ const Rooms: React.FC = () => {
   useEffect(() => {
     const fetchRooms = async () => {
       try {
-        const response = await axios.get<Room[]>('https://homestaykashmir.onrender.com/api/rooms');
+        const response = await axios.get<Room[]>('https://api.homestaykashmir.com/api/rooms');
         setRooms(response.data);
       } catch (error: any) {
         console.error('Error fetching rooms:', error);
