@@ -35,7 +35,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       const token = localStorage.getItem('token');
       if (token) {
         try {
-          const response = await axios.get('https://homestaykashmir.onrender.com/api/auth/verify', {
+          const response = await axios.get('https://api.homestaykashmir.com/api/auth/verify', {
             headers: { Authorization: `Bearer ${token}` }
           });
           setUser(response.data.user);
@@ -53,7 +53,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const login = async (email: string, password: string, userType: string) => {
     try {
-      const response = await axios.post('https://homestaykashmir.onrender.com/api/auth/login', {
+      const response = await axios.post('https://api.homestaykashmir.com/api/auth/login', {
         email,
         password,
         userType
@@ -80,7 +80,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const register = async (userData: any) => {
     try {
-      await axios.post('https://homestaykashmir.onrender.com/api/auth/register', userData);
+      await axios.post('https://api.homestaykashmir.com/api/auth/register', userData);
       toast.success('Registration successful! Please login.');
       navigate('/signin');
     } catch (error: any) {
@@ -99,7 +99,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const updateProfile = async (data: Partial<User>) => {
     try {
-      const response = await axios.put('https://homestaykashmir.onrender.com/api/users/profile', data);
+      const response = await axios.put('https://api.homestaykashmir.com/api/users/profile', data);
       setUser(response.data);
       toast.success('Profile updated successfully');
     } catch (error: any) {
