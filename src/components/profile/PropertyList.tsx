@@ -23,7 +23,7 @@ const PropertyList = () => {
 
   const fetchProperties = async () => {
     try {
-      const response = await axios.get('https://homestaykashmir.onrender.com/api/ads/my-ads');
+      const response = await axios.get('https://api.homestaykashmir.com/api/ads/my-ads');
       setProperties(response.data);
     } catch (error) {
       toast.error('Failed to fetch properties');
@@ -41,7 +41,7 @@ const PropertyList = () => {
     if (cleanedPath.startsWith('http')) {
       return cleanedPath;
     }
-    return `https://homestaykashmir.onrender.com/${cleanedPath}`;
+    return `https://api.homestaykashmir.com/${cleanedPath}`;
   };
 
   const getStatusIcon = (status: string) => {
