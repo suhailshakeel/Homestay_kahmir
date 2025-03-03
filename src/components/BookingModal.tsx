@@ -28,7 +28,7 @@ const BookingModal: React.FC<BookingModalProps> = ({ roomId, onClose, onSuccess 
     try {
       const token = localStorage.getItem('token');
       await axios.post(
-        `http://localhost:5000/api/rooms/${roomId}/book`,
+        `http://api.homestaykashmir.com/api/rooms/${roomId}/book`,
         formData,
         {
           headers: {
