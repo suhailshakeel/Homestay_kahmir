@@ -11,7 +11,7 @@ const getImageUrl = (imagePath: string) => {
   if (imagePath.startsWith("http")) {
     return imagePath; // Return the full URL if it's already absolute
   }
-  return `http://homestaykashmir.onrender.com/${imagePath}`; // Otherwise, prepend the base URL
+  return `http://www.homestaykashmir.com/${imagePath}`; // Otherwise, prepend the base URL
 };
 
 const PhotoGallery: React.FC<PhotoGalleryProps> = ({ photos, title }) => {
