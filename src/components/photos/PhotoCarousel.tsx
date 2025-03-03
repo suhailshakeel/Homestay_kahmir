@@ -5,7 +5,7 @@ const getImageUrl = (imagePath: string) => {
   if (imagePath.startsWith("http")) {
     return imagePath;
   }
-  return `https://homestaykashmir.onrender.com/${imagePath}`;
+  return `https://api.homestaykashmir.com/${imagePath}`;
 };
 
 interface PhotoCarouselProps {
