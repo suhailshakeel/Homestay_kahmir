@@ -30,7 +30,7 @@ const Transactions = () => {
     const fetchTransactions = async () => {
       try {
         const token = localStorage.getItem('token');
-        const response = await axios.get('https://homestaykashmir.onrender.com/api/transactions', {
+        const response = await axios.get('https://api.homestaykashmir.com/api/transactions', {
           headers: { Authorization: `Bearer ${token}` }
         });
         setTransactions(response.data);
