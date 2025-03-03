@@ -37,7 +37,7 @@ const PendingAdsList = () => {
   const fetchPendingAds = async () => {
     try {
       const token = localStorage.getItem('token');
-      const response = await axios.get('https://homestaykashmir.onrender.com/api/admin/pending-ads', {
+      const response = await axios.get('https://api.homestaykashmir.com/api/admin/pending-ads', {
         headers: { Authorization: `Bearer ${token}` },
       });
       setAds(response.data);
@@ -56,7 +56,7 @@ const PendingAdsList = () => {
     try {
       const token = localStorage.getItem('token');
       await axios.post(
-        `https://homestaykashmir.onrender.com/api/admin/ads/${adId}/approve`,
+        `https://api.homestaykashmir.com/api/admin/ads/${adId}/approve`,
         {},
         {
           headers: { Authorization: `Bearer ${token}` },
@@ -73,7 +73,7 @@ const PendingAdsList = () => {
     try {
       const token = localStorage.getItem('token');
       await axios.post(
-        `https://homestaykashmir.onrender.com/api/admin/ads/${adId}/reject`,
+        `https://api.homestaykashmir.com/api/admin/ads/${adId}/reject`,
         { reason },
         { headers: { Authorization: `Bearer ${token}` } }
       );
@@ -90,7 +90,7 @@ const PendingAdsList = () => {
     if (imagePath.startsWith("http")) {
       return imagePath; // Return the full URL if it's already absolute
     }
-    return `https://homestaykashmir.onrender.com/${imagePath}`; // Otherwise, prepend the base URL
+    return `https://api.homestaykashmir.com/${imagePath}`; // Otherwise, prepend the base URL
   };
 
   if (loading) {
