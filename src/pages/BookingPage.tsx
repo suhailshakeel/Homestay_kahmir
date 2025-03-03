@@ -17,7 +17,7 @@ const BookingPage = () => {
   useEffect(() => {
     const fetchRoom = async () => {
       try {
-        const response = await axios.get(`https://homestaykashmir.onrender.com/api/rooms/${roomId}`);
+        const response = await axios.get(`https://api.homestaykashmir.com/api/rooms/${roomId}`);
         setRoom(response.data);
       } catch (error: any) {
         setError(error.response?.data?.message || 'Failed to fetch room details');
@@ -51,7 +51,7 @@ const BookingPage = () => {
       }
 
       // Create order on your backend
-      const orderResponse = await axios.post('https://homestaykashmir.onrender.com/api/payment/create-order', {
+      const orderResponse = await axios.post('https://api.homestaykashmir.com/api/payment/create-order', {
         amount: room?.price,
         roomId
       });
@@ -76,7 +76,7 @@ const BookingPage = () => {
             formData.append('orderId', response.razorpay_order_id);
             formData.append('signature', response.razorpay_signature);
 
-            await axios.post(`https://homestaykashmir.onrender.com/api/rooms/${roomId}/book`, formData, {
+            await axios.post(`https://api.homestaykashmir.com/api/rooms/${roomId}/book`, formData, {
               headers: {
                 'Content-Type': 'multipart/form-data',
                 'Authorization': `Bearer ${localStorage.getItem('token')}`
