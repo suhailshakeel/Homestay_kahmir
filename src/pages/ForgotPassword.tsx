@@ -16,7 +16,7 @@ const ForgotPassword = () => {
     setLoading(true);
 
     try {
-      const response = await axios.post('https://homestaykashmir.onrender.com/api/auth/forgot-password', { email });
+      const response = await axios.post('https://api.homestaykashmir.com/api/auth/forgot-password', { email });
       setMessage(response.data.message);
     } catch (error: any) {
       setError(error.response?.data?.message || 'An error occurred');
