@@ -57,7 +57,7 @@ const CreateAd = () => {
         formData.append('images', image);
       });
 
-      await axios.post('https://homestaykashmir.onrender.com/api/ads', formData, {
+      await axios.post('https://api.homestaykashmir.com/api/ads', formData, {
         headers: { 'Content-Type': 'multipart/form-data' }
       });
 
