@@ -1,7 +1,7 @@
 import axios from 'axios';
 
 const api = axios.create({
-  baseURL: 'https://homestaykashmir.onrender.com/api/ads',
+  baseURL: 'https://api.homestaykashmir.com/api/ads',
   headers: {
     'Content-Type': 'application/json',
   },
