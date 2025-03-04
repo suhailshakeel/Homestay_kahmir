@@ -34,7 +34,7 @@ const UsersManagement = () => {
       if (filters.status) params.append('status', filters.status);
       if (filters.search) params.append('search', filters.search);
 
-      const response = await axios.get(`/api/admin/users?${params.toString()}`);
+      const response = await axios.get(`https://api.homestaykashmir.com/api/admin/users?${params.toString()}`);
       setUsers(response.data);
     } catch (error) {
       toast.error('Failed to fetch users');
@@ -45,7 +45,7 @@ const UsersManagement = () => {
 
   const updateUserStatus = async (userId: string, newStatus: 'active' | 'inactive') => {
     try {
-      await axios.patch(`/api/admin/users/${userId}/status`, { status: newStatus });
+      await axios.patch(`https://api.homestaykashmir.com/api/admin/users/${userId}/status`, { status: newStatus });
       setUsers(users.map(user => 
         user._id === userId ? { ...user, status: newStatus } : user
       ));
