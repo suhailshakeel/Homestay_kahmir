@@ -39,7 +39,7 @@ const Reports = () => {
       if (filters.endDate) params.append('endDate', filters.endDate);
       if (filters.status) params.append('status', filters.status);
 
-      const response = await axios.get(`/api/admin/reports/transactions?${params.toString()}`);
+      const response = await axios.get(`https://api.homestaykashmir.com/api/admin/reports/transactions?${params.toString()}`);
       setTransactions(response.data);
     } catch (error) {
       toast.error('Failed to fetch transactions');
