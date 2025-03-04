@@ -49,8 +49,8 @@ const DashboardOverview = () => {
     const fetchStats = async () => {
       try {
         const [statsResponse, chartResponse] = await Promise.all([
-          axios.get('/api/admin/stats'),
-          axios.get('/api/admin/stats/chart')
+          axios.get('https://api.homestaykashmir.com/api/admin/stats'),
+          axios.get('https://api.homestaykashmir.com/api/admin/stats/chart')
         ]);
         setStats(statsResponse.data);
         setChartData(chartResponse.data);
