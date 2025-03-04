@@ -29,7 +29,6 @@ initSocket(httpServer);
 // CORS Configuration
 const allowedOrigins = [
   'https://www.homestaykashmir.com',
-  'http://localhost:5173',
   'https://api.homestaykashmir.com'
 ];
 
