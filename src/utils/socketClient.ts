@@ -4,7 +4,7 @@ let socket: typeof SocketType | null = null;
 
 export const getSocket = () => {
   if (!socket) {
-    socket = io(process.env.REACT_APP_API_URL || 'http://localhost:5000', {
+    socket = io(process.env.REACT_APP_API_URL || 'https://api.homestaykashmir.com/', {
       autoConnect: true,
     });
   }
