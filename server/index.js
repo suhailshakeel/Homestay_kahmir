@@ -44,24 +44,7 @@ app.use(cors({
   optionsSuccessStatus: 200 // Prevents issues with older browsers
 }));
 
-// Handle Preflight Requests
-//app.use((req, res, next) => {
-  //res.header("Access-Control-Allow-Origin", allowedOrigins.includes(req.headers.origin) ? req.headers.origin : ""); 
-  //res.header("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS");
-  //res.header("Access-Control-Allow-Headers", "Content-Type, Authorization");
-  //res.header("Access-Control-Allow-Credentials", "true");
 
-  //if (req.method === "OPTIONS") {
-    //return res.sendStatus(200);
-  //}
-  //next();
-//});
-app.use(cors({
-  origin: allowedOrigins, // Directly pass the array
-  credentials: true,
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization']
-}));
 // Middleware
 app.use(express.json());
 
