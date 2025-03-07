@@ -44,7 +44,7 @@ const Rooms: React.FC = () => {
       navigate('/signin');
       return;
     }
-    navigate(/book/${roomId});
+    navigate(`/book/${roomId}`);
   };
 
   if (loading) {
