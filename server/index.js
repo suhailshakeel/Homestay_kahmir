@@ -28,8 +28,8 @@ initSocket(httpServer);
 
 // CORS Configuration
 const allowedOrigins = [
-  'https://api.homestaykashmir.com',
-  'https://www.homestaykashmir.com'
+  'https://www.homestaykashmir.com',
+  'https://api.homestaykashmir.com'
 ];
 
 app.use(cors({

@@ -8,12 +8,24 @@ const Rooms: React.FC = () => {
   const [rooms, setRooms] = useState<Room[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
   const navigate = useNavigate();
 
+  // Check authentication
+  useEffect(() => {
+    const checkAuth = () => {
+      const userToken = localStorage.getItem('token'); // Assuming token is stored in localStorage
+      setIsAuthenticated(!!userToken);
+    };
+
+    checkAuth();
+  }, []);
+
+  // Fetch available rooms
   useEffect(() => {
     const fetchRooms = async () => {
       try {
-        const response = await axios.get<Room[]>('https://api.homestaykashmir.com/api/rooms');
+        const response = await axios.get<Room[]>('http://api.homestaykashmir.com/api/rooms');
         setRooms(response.data);
       } catch (error: any) {
         console.error('Error fetching rooms:', error);
@@ -26,13 +38,13 @@ const Rooms: React.FC = () => {
     fetchRooms();
   }, []);
 
+  // Handle booking a room
   const handleBookRoom = (roomId: string) => {
-    const user = localStorage.getItem('user');
-    if (!user) {
+    if (!isAuthenticated) {
       navigate('/signin');
       return;
     }
-    navigate(`/book/${roomId}`);
+    navigate(/book/${roomId});
   };
 
   if (loading) {
