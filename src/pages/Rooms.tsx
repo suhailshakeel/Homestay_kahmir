@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import RoomCard from '../components/rooms/RoomCard';
 import { Room } from '../interfaces/Room';
 
@@ -10,16 +10,22 @@ const Rooms: React.FC = () => {
   const [error, setError] = useState('');
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const navigate = useNavigate();
+  const location = useLocation();
 
   // Check authentication
   useEffect(() => {
-    const checkAuth = () => {
-      const userToken = localStorage.getItem('token');
-      setIsAuthenticated(!!userToken);
-    };
+    const userToken = localStorage.getItem('token');
+    setIsAuthenticated(!!userToken);
 
-    checkAuth();
-  }, []);
+    // Redirect user to the stored booking page after login
+    if (userToken) {
+      const redirectUrl = localStorage.getItem('redirectAfterLogin');
+      if (redirectUrl) {
+        localStorage.removeItem('redirectAfterLogin'); // Clear it after use
+        navigate(redirectUrl);
+      }
+    }
+  }, [navigate]);
 
   // Fetch available rooms
   useEffect(() => {
@@ -38,14 +44,15 @@ const Rooms: React.FC = () => {
     fetchRooms();
   }, []);
 
-  // Handle booking a room - UPDATED TO PASS REDIRECT STATE
+  // Handle booking a room
   const handleBookRoom = (roomId: string) => {
+    const bookingPageUrl = `/book/${roomId}`;
     if (!isAuthenticated) {
-      // Pass the booking page URL as state
-      navigate('/signin', { state: { from: `/book/${roomId}` } });
+      localStorage.setItem('redirectAfterLogin', bookingPageUrl); // Store intended URL
+      navigate('/signin');
       return;
     }
-    navigate(`/book/${roomId}`);
+    navigate(bookingPageUrl);
   };
 
   if (loading) {
