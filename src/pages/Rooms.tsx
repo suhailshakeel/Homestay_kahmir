@@ -12,23 +12,46 @@ const Rooms: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
 
-  // Check authentication and handle redirect from stored booking URL
+  // Check authentication
   useEffect(() => {
-    const checkAuthAndRedirect = () => {
+    const checkAuth = () => {
       const userToken = localStorage.getItem('token'); // Assuming token is stored in localStorage
-      const storedBookingUrl = localStorage.getItem('intendedBookingUrl'); // Check for stored URL
-
       setIsAuthenticated(!!userToken);
+    };
 
-      // If authenticated and there's a stored booking URL, redirect to it
+    checkAuth();
+  }, []);
+
+  // Handle direct booking links or post-auth redirect
+  useEffect(() => {
+    const handleBookingRedirect = () => {
+      const currentPath = location.pathname; // e.g., "/book/67cb2eac7fd46cb0714bb320"
+      const storedBookingUrl = localStorage.getItem('intendedBookingUrl');
+      const userToken = localStorage.getItem('token');
+
+      // If user is authenticated and accessing a booking link directly
+      if (userToken && currentPath.startsWith('/book/')) {
+        navigate(currentPath); // Stay on the booking page
+        return;
+      }
+
+      // If user is not authenticated and accessing a booking link
+      if (!userToken && currentPath.startsWith('/book/')) {
+        localStorage.setItem('intendedBookingUrl', currentPath);
+        navigate('/signin');
+        return;
+      }
+
+      // If authenticated and there's a stored URL (though this won't trigger after /profile redirect)
       if (userToken && storedBookingUrl) {
-        localStorage.removeItem('intendedBookingUrl'); // Clear the stored URL after use
-        navigate(storedBookingUrl);
+        const redirectUrl = storedBookingUrl;
+        localStorage.removeItem('intendedBookingUrl'); // Clear after use
+        navigate(redirectUrl);
       }
     };
 
-    checkAuthAndRedirect();
-  }, [navigate]);
+    handleBookingRedirect();
+  }, [location.pathname, navigate]);
 
   // Fetch available rooms
   useEffect(() => {
@@ -52,29 +75,13 @@ const Rooms: React.FC = () => {
     const bookingPath = `/book/${roomId}`;
 
     if (!isAuthenticated) {
-      // Store the intended booking URL in localStorage before redirecting to sign-in
       localStorage.setItem('intendedBookingUrl', bookingPath);
       navigate('/signin');
       return;
     }
 
-    // If authenticated, go directly to the booking page
     navigate(bookingPath);
   };
-
-  // Check if the user accessed a direct booking URL
-  useEffect(() => {
-    const checkDirectBookingLink = () => {
-      const currentPath = location.pathname; // e.g., "/book/67cb2eac7fd46cb0714bb320"
-      if (currentPath.startsWith('/book/') && !isAuthenticated) {
-        // Store the direct booking URL and redirect to sign-in
-        localStorage.setItem('intendedBookingUrl', currentPath);
-        navigate('/signin');
-      }
-    };
-
-    checkDirectBookingLink();
-  }, [location.pathname, isAuthenticated, navigate]);
 
   if (loading) {
     return (
