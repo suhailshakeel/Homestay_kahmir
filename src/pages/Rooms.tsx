@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import RoomCard from '../components/rooms/RoomCard';
 import { Room } from '../interfaces/Room';
 
@@ -10,16 +10,25 @@ const Rooms: React.FC = () => {
   const [error, setError] = useState('');
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const navigate = useNavigate();
+  const location = useLocation();
 
-  // Check authentication
+  // Check authentication and handle redirect from stored booking URL
   useEffect(() => {
-    const checkAuth = () => {
+    const checkAuthAndRedirect = () => {
       const userToken = localStorage.getItem('token'); // Assuming token is stored in localStorage
+      const storedBookingUrl = localStorage.getItem('intendedBookingUrl'); // Check for stored URL
+
       setIsAuthenticated(!!userToken);
+
+      // If authenticated and there's a stored booking URL, redirect to it
+      if (userToken && storedBookingUrl) {
+        localStorage.removeItem('intendedBookingUrl'); // Clear the stored URL after use
+        navigate(storedBookingUrl);
+      }
     };
 
-    checkAuth();
-  }, []);
+    checkAuthAndRedirect();
+  }, [navigate]);
 
   // Fetch available rooms
   useEffect(() => {
@@ -40,12 +49,32 @@ const Rooms: React.FC = () => {
 
   // Handle booking a room
   const handleBookRoom = (roomId: string) => {
+    const bookingPath = `/book/${roomId}`;
+
     if (!isAuthenticated) {
+      // Store the intended booking URL in localStorage before redirecting to sign-in
+      localStorage.setItem('intendedBookingUrl', bookingPath);
       navigate('/signin');
       return;
     }
-    navigate(`/book/${roomId}`);
+
+    // If authenticated, go directly to the booking page
+    navigate(bookingPath);
   };
+
+  // Check if the user accessed a direct booking URL
+  useEffect(() => {
+    const checkDirectBookingLink = () => {
+      const currentPath = location.pathname; // e.g., "/book/67cb2eac7fd46cb0714bb320"
+      if (currentPath.startsWith('/book/') && !isAuthenticated) {
+        // Store the direct booking URL and redirect to sign-in
+        localStorage.setItem('intendedBookingUrl', currentPath);
+        navigate('/signin');
+      }
+    };
+
+    checkDirectBookingLink();
+  }, [location.pathname, isAuthenticated, navigate]);
 
   if (loading) {
     return (
