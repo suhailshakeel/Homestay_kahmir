@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
-import { useNavigate, useLocation } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import RoomCard from '../components/rooms/RoomCard';
 import { Room } from '../interfaces/Room';
 
@@ -10,34 +10,21 @@ const Rooms: React.FC = () => {
   const [error, setError] = useState('');
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const navigate = useNavigate();
-  const location = useLocation();
 
-  // Authentication and redirect logic
   useEffect(() => {
-    const handleAuthCheck = () => {
-      const userToken = localStorage.getItem('token');
-      const storedRedirect = localStorage.getItem('bookingRedirect');
-      
-      if (userToken && storedRedirect) {
-        localStorage.removeItem('bookingRedirect');
-        navigate(storedRedirect);
-        return;
+    const userToken = localStorage.getItem('token');
+    setIsAuthenticated(!!userToken);
+
+    // If user just logged in, check if they should be redirected
+    if (userToken) {
+      const redirectUrl = sessionStorage.getItem('redirectAfterLogin');
+      if (redirectUrl) {
+        sessionStorage.removeItem('redirectAfterLogin'); // Clear after use
+        navigate(redirectUrl);
       }
+    }
+  }, [navigate]);
 
-      if (!userToken && location.pathname.startsWith('/book/')) {
-        localStorage.setItem('bookingRedirect', location.pathname);
-        navigate('/signin');
-      }
-
-      setIsAuthenticated(!!userToken);
-    };
-
-    handleAuthCheck();
-    const intervalId = setInterval(handleAuthCheck, 500);
-    return () => clearInterval(intervalId);
-  }, [navigate, location]);
-
-  // Fetch rooms data
   useEffect(() => {
     const fetchRooms = async () => {
       try {
@@ -53,55 +40,29 @@ const Rooms: React.FC = () => {
     fetchRooms();
   }, []);
 
-  // Booking handler
   const handleBookRoom = (roomId: string) => {
-    const bookingPath = `/book/${roomId}`;
-    
+    const bookingPageUrl = `/book/${roomId}`;
     if (!isAuthenticated) {
-      localStorage.setItem('bookingRedirect', bookingPath);
+      sessionStorage.setItem('redirectAfterLogin', bookingPageUrl); // Use sessionStorage instead
       navigate('/signin');
-      return;
+    } else {
+      navigate(bookingPageUrl);
     }
-    navigate(bookingPath);
   };
-
-  if (loading) {
-    return (
-      <div className="container mx-auto px-4 py-8">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600 mx-auto"></div>
-          <p className="mt-4 text-gray-600">Loading rooms...</p>
-        </div>
-      </div>
-    );
-  }
-
-  if (error) {
-    return (
-      <div className="container mx-auto px-4 py-8">
-        <div className="text-center text-red-600">
-          <p className="text-xl">Error loading rooms</p>
-          <p className="mt-2">{error}</p>
-        </div>
-      </div>
-    );
-  }
 
   return (
     <div className="container mx-auto px-4 py-8">
       <h1 className="text-3xl font-bold mb-8">Available Rooms</h1>
-      {rooms.length === 0 ? (
-        <div className="text-center text-gray-600">
-          <p>No rooms available at the moment.</p>
-        </div>
+      {loading ? (
+        <p>Loading rooms...</p>
+      ) : error ? (
+        <p className="text-red-600">{error}</p>
+      ) : rooms.length === 0 ? (
+        <p>No rooms available.</p>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
           {rooms.map((room) => (
-            <RoomCard
-              key={room._id}
-              room={room}
-              onBook={() => handleBookRoom(room._id)}
-            />
+            <RoomCard key={room._id} room={room} onBook={() => handleBookRoom(room._id)} />
           ))}
         </div>
       )}
