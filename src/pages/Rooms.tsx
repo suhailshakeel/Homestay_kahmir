@@ -12,22 +12,32 @@ const Rooms: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
 
-  // Check authentication
+  // Authentication and redirect logic
   useEffect(() => {
-    const userToken = localStorage.getItem('token');
-    setIsAuthenticated(!!userToken);
-
-    // Redirect user to the stored booking page after login
-    if (userToken) {
-      const redirectUrl = localStorage.getItem('redirectAfterLogin');
-      if (redirectUrl) {
-        localStorage.removeItem('redirectAfterLogin'); // Clear it after use
-        navigate(redirectUrl);
+    const checkAuthAndRedirect = () => {
+      const userToken = localStorage.getItem('token');
+      const storedRedirect = localStorage.getItem('bookingRedirect');
+      
+      // Check if user just logged in and has a stored redirect
+      if (userToken && storedRedirect) {
+        localStorage.removeItem('bookingRedirect');
+        navigate(storedRedirect);
+        return;
       }
-    }
-  }, [navigate]);
 
-  // Fetch available rooms
+      // Update authentication state
+      setIsAuthenticated(!!userToken);
+
+      // Store current path if it's a booking page and user isn't authenticated
+      if (!userToken && location.pathname.startsWith('/book/')) {
+        localStorage.setItem('bookingRedirect', location.pathname);
+      }
+    };
+
+    checkAuthAndRedirect();
+  }, [navigate, location]);
+
+  // Fetch rooms data
   useEffect(() => {
     const fetchRooms = async () => {
       try {
@@ -44,17 +54,19 @@ const Rooms: React.FC = () => {
     fetchRooms();
   }, []);
 
-  // Handle booking a room
+  // Booking handler with redirect logic
   const handleBookRoom = (roomId: string) => {
-    const bookingPageUrl = `/book/${roomId}`;
+    const bookingPath = `/book/${roomId}`;
+    
     if (!isAuthenticated) {
-      localStorage.setItem('redirectAfterLogin', bookingPageUrl); // Store intended URL
+      localStorage.setItem('bookingRedirect', bookingPath);
       navigate('/signin');
       return;
     }
-    navigate(bookingPageUrl);
+    navigate(bookingPath);
   };
 
+  // Loading state
   if (loading) {
     return (
       <div className="container mx-auto px-4 py-8">
@@ -66,6 +78,7 @@ const Rooms: React.FC = () => {
     );
   }
 
+  // Error state
   if (error) {
     return (
       <div className="container mx-auto px-4 py-8">
@@ -77,6 +90,7 @@ const Rooms: React.FC = () => {
     );
   }
 
+  // Main render
   return (
     <div className="container mx-auto px-4 py-8">
       <h1 className="text-3xl font-bold mb-8">Available Rooms</h1>
