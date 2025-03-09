@@ -66,42 +66,27 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     initializeAuth();
   }, []);
 
-  const login = async (email: string, password: string, userType: string) => {
-    try {
-      const response = await axios.post('https://api.homestaykashmir.com/api/auth/login', {
-        email,
-        password,
-        userType
-      });
+ const login = async (email: string, password: string, userType: string) => {
+  try {
+    const response = await axios.post('https://api.homestaykashmir.com/api/auth/login', {
+      email,
+      password,
+      userType
+    });
 
-      const { token, user: userData } = response.data;
-      localStorage.setItem('token', token);
-      localStorage.setItem('user', JSON.stringify(userData));
-      axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
-      setUser(userData);
+    const { token, user: userData } = response.data;
+    localStorage.setItem('token', token);
+    localStorage.setItem('user', JSON.stringify(userData));
+    axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
+    setUser(userData);
 
-      toast.success('Login successful!');
-
-      // Check for pending booking
-      const pendingRoomId = localStorage.getItem('pendingBookingRoomId') || (window as any).__pendingBookingRoomId__;
-
-      if (pendingRoomId) {
-        localStorage.removeItem('pendingBookingRoomId');
-        delete (window as any).__pendingBookingRoomId__;
-        navigate(`/book/${pendingRoomId}`);
-      } else {
-        // Role-based redirection
-        if (userData.role === 'admin') {
-          navigate('/admin');
-        } else {
-          navigate('/profile');
-        }
-      }
-    } catch (error: any) {
-      toast.error(error.response?.data?.message || 'Login failed');
-      throw error;
-    }
-  };
+    toast.success('Login successful!');
+    // Removed all navigation logic from here
+  } catch (error: any) {
+    toast.error(error.response?.data?.message || 'Login failed');
+    throw error;
+  }
+};
 
   const register = async (userData: any) => {
     try {
