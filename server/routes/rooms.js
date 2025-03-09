@@ -98,7 +98,7 @@ router.get('/:id', async (req, res) => {
       return res.status(404).json({ message: 'Room not found' });
     }
 
-    // Transform and validate room data (same as GET / route)
+    // Transform and validate room data
     const transformedRoom = {
       _id: room._id,
       title: room.title || 'Untitled Room',
@@ -124,7 +124,8 @@ router.get('/:id', async (req, res) => {
       createdAt: room.createdAt,
       updatedAt: room.updatedAt
     };
-    
+
+    console.log('Transformed room response:', transformedRoom); // Debug log
     res.json(transformedRoom);
   } catch (error) {
     console.error('Error fetching room:', error);
