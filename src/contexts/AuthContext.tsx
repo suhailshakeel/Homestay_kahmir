@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import { useNavigate, useLocation } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { toast } from 'react-toastify';
 import axios from 'axios';
 
@@ -29,7 +29,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
-  const location = useLocation();
 
   useEffect(() => {
     const initializeAuth = async () => {
@@ -83,29 +82,23 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
       toast.success('Login successful!');
 
-      // Check for redirect state first (from ProtectedRoute)
-      const from = location.state?.from;
-      const redirectPath = from?.pathname;
-      
-      // Then check for pending booking
-      const pendingRoomId = localStorage.getItem('pendingBookingRoomId') || (window as any).__pendingBookingRoomId__;
+      // Check for pending booking
+      const pendingRoomId = localStorage.getItem('pendingBookingRoomId') || 
+                           (window.__pendingBookingRoomId__ || null);
 
-      // Prioritize redirect decisions
-      if (redirectPath && redirectPath.startsWith('/book/')) {
-        // If we were trying to access a booking page directly
-        navigate(redirectPath);
-      } else if (pendingRoomId) {
-        // If we have a pending booking from another flow
+      if (pendingRoomId) {
+        console.log('Found pending booking during login:', pendingRoomId);
+        
+        // Clear storage
         localStorage.removeItem('pendingBookingRoomId');
-        if ((window as any).__pendingBookingRoomId__) {
-          (window as any).__pendingBookingRoomId__ = null;
+        if (window.__pendingBookingRoomId__) {
+          window.__pendingBookingRoomId__ = null;
         }
+        
+        // Immediately navigate to booking page
         navigate(`/book/${pendingRoomId}`);
-      } else if (redirectPath) {
-        // For any other protected route we were trying to access
-        navigate(redirectPath);
       } else {
-        // Default behavior - Role-based redirection
+        // Role-based redirection
         if (userData.role === 'admin') {
           navigate('/admin');
         } else {
