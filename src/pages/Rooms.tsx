@@ -8,86 +8,88 @@ const Rooms: React.FC = () => {
   const [rooms, setRooms] = useState<Room[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
   const navigate = useNavigate();
   const location = useLocation();
 
-  // Authentication and redirect system
+  // Check authentication and handle redirects
   useEffect(() => {
-    let isMounted = true;
-    const BOOKING_REDIRECT_KEY = 'hs_booking_redirect';
-    
-    const processRedirects = () => {
-      const token = localStorage.getItem('token');
-      const storedPath = localStorage.getItem(BOOKING_REDIRECT_KEY);
-      const currentPath = location.pathname;
-
-      // Case 1: User arrived directly at booking page (not authenticated)
-      if (!token && currentPath.startsWith('/book/')) {
-        localStorage.setItem(BOOKING_REDIRECT_KEY, currentPath);
-        navigate('/signin');
-        return;
-      }
-
-      // Case 2: User returns authenticated with stored path
-      if (token && storedPath) {
-        if (isMounted) {
-          localStorage.removeItem(BOOKING_REDIRECT_KEY);
-          navigate(storedPath);
-        }
-        return;
-      }
-
-      // Case 3: User logged in but has no stored path
-      if (token && currentPath === '/profile') {
-        const initialPath = localStorage.getItem(BOOKING_REDIRECT_KEY) || '/rooms';
-        if (initialPath !== currentPath) {
-          navigate(initialPath);
+    const checkAuth = () => {
+      const userToken = localStorage.getItem('token'); // Assuming token is stored in localStorage
+      setIsAuthenticated(!!userToken);
+      
+      // If user is authenticated, check if there's a pending room booking
+      if (userToken) {
+        const pendingBookingRoom = localStorage.getItem('pendingBookingRoom');
+        if (pendingBookingRoom) {
+          localStorage.removeItem('pendingBookingRoom'); // Clear the pending booking
+          navigate(`/book/${pendingBookingRoom}`);
         }
       }
     };
+    checkAuth();
+  }, [navigate]);
 
-    // Immediate check on mount
-    processRedirects();
-
-    // Set up continuous monitoring
-    const redirectInterval = setInterval(processRedirects, 300);
-    
-    return () => {
-      isMounted = false;
-      clearInterval(redirectInterval);
-    };
-  }, [navigate, location]);
-
-  // Room data fetching
+  // Handle direct booking links
   useEffect(() => {
-    const loadRooms = async () => {
+    // Check if the URL contains a direct booking path like /book/67cb2eac7fd46cb0714bb320
+    const path = location.pathname;
+    if (path.startsWith('/book/')) {
+      const roomId = path.split('/book/')[1];
+      if (roomId) {
+        handleBookRoom(roomId);
+      }
+    }
+  }, [location.pathname]);
+
+  // Fetch available rooms
+  useEffect(() => {
+    const fetchRooms = async () => {
       try {
         const response = await axios.get<Room[]>('https://api.homestaykashmir.com/api/rooms');
         setRooms(response.data);
-      } catch (err) {
-        setError(err.response?.data?.message || 'Error loading rooms');
+      } catch (error: any) {
+        console.error('Error fetching rooms:', error);
+        setError(error.response?.data?.message || 'Failed to fetch rooms');
       } finally {
         setLoading(false);
       }
     };
-
-    loadRooms();
+    fetchRooms();
   }, []);
 
+  // Handle booking a room
   const handleBookRoom = (roomId: string) => {
-    const bookingPath = `/book/${roomId}`;
-    const isAuthenticated = !!localStorage.getItem('token');
-
     if (!isAuthenticated) {
-      localStorage.setItem('hs_booking_redirect', bookingPath);
+      // Store the room ID to redirect after authentication
+      localStorage.setItem('pendingBookingRoom', roomId);
       navigate('/signin');
-    } else {
-      navigate(bookingPath);
+      return;
     }
+    navigate(`/book/${roomId}`);
   };
 
-  // Loading and error states remain the same as previous versions
-  // ...
+  if (loading) {
+    return (
+      <div className="container mx-auto px-4 py-8">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600 mx-auto"></div>
+          <p className="mt-4 text-gray-600">Loading rooms...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="container mx-auto px-4 py-8">
+        <div className="text-center text-red-600">
+          <p className="text-xl">Error loading rooms</p>
+          <p className="mt-2">{error}</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="container mx-auto px-4 py-8">
@@ -99,11 +101,7 @@ const Rooms: React.FC = () => {
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
           {rooms.map((room) => (
-            <RoomCard
-              key={room._id}
-              room={room}
-              onBook={() => handleBookRoom(room._id)}
-            />
+            <RoomCard key={room._id} room={room} onBook={() => handleBookRoom(room._id)} />
           ))}
         </div>
       )}
