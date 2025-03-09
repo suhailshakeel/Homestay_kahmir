@@ -4,77 +4,64 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import RoomCard from '../components/rooms/RoomCard';
 import { Room } from '../interfaces/Room';
 
-// Create a global variable to persist across page navigations
-declare global {
-  interface Window {
-    __pendingBookingRoomId__: string | null;
-  }
-}
-
-// Initialize if not already set
-if (typeof window.__pendingBookingRoomId__ === 'undefined') {
-  window.__pendingBookingRoomId__ = null;
-}
-
 const Rooms: React.FC = () => {
   const [rooms, setRooms] = useState<Room[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
   const navigate = useNavigate();
   const location = useLocation();
 
-  // Process any direct booking URLs before authentication check
+  // Handle direct booking URLs and authentication state
   useEffect(() => {
-    const processDirectBookingUrl = () => {
-      const path = window.location.pathname;
-      
-      // If this is a direct booking URL
-      if (path.startsWith('/book/')) {
-        const roomId = path.split('/book/')[1];
+    const handleDirectBooking = () => {
+      const pathMatch = location.pathname.match(/^\/book\/([a-f0-9]{24}$)/i);
+      if (pathMatch) {
+        const roomId = pathMatch[1];
         if (roomId) {
-          // Store the room ID in the global variable
-          window.__pendingBookingRoomId__ = roomId;
+          // Store booking intent in session storage
+          sessionStorage.setItem('bookingIntent', JSON.stringify({
+            path: `/book/${roomId}`,
+            search: location.search,
+            timestamp: Date.now()
+          }));
           
-          // Also store in localStorage as backup
-          localStorage.setItem('pendingBookingRoomId', roomId);
+          // Redirect to login with preserved state
+          navigate('/signin', {
+            state: {
+              from: {
+                pathname: `/book/${roomId}`,
+                search: location.search
+              }
+            },
+            replace: true
+          });
         }
       }
     };
+
+    handleDirectBooking();
+  }, [location, navigate]);
+
+  // Handle normal room booking flow
+  const handleBookRoom = (roomId: string) => {
+    const bookingIntent = {
+      path: `/book/${roomId}`,
+      search: window.location.search,
+      timestamp: Date.now()
+    };
+
+    // Store booking intent in session storage
+    sessionStorage.setItem('bookingIntent', JSON.stringify(bookingIntent));
     
-    processDirectBookingUrl();
-  }, []);
-
-  // Check authentication status and handle pending bookings
-  useEffect(() => {
-    const checkAuthAndRedirect = () => {
-      const userToken = localStorage.getItem('token');
-      const isAuth = !!userToken;
-      setIsAuthenticated(isAuth);
-
-      // If user is authenticated, check for pending booking
-      if (isAuth) {
-        // Try to get the room ID from the global variable first
-        let pendingRoomId = window.__pendingBookingRoomId__;
-        
-        // If not available, try localStorage as backup
-        if (!pendingRoomId) {
-          pendingRoomId = localStorage.getItem('pendingBookingRoomId');
-        }
-        
-        if (pendingRoomId) {
-          // Clear the stored values
-          window.__pendingBookingRoomId__ = null;
-          localStorage.removeItem('pendingBookingRoomId');
-          
-          // Redirect to the booking page
-          navigate(`/book/${pendingRoomId}`);
+    navigate('/signin', {
+      state: {
+        from: {
+          pathname: `/book/${roomId}`,
+          search: window.location.search
         }
       }
-    };
-    
-    checkAuthAndRedirect();
-  }, [navigate]);
+    });
+  };
 
   // Fetch available rooms
   useEffect(() => {
@@ -92,20 +79,6 @@ const Rooms: React.FC = () => {
     
     fetchRooms();
   }, []);
-
-  // Handle booking a room through normal flow
-  const handleBookRoom = (roomId: string) => {
-    if (!isAuthenticated) {
-      // Store the room ID before redirecting
-      window.__pendingBookingRoomId__ = roomId;
-      localStorage.setItem('pendingBookingRoomId', roomId);
-      
-      navigate('/signin');
-      return;
-    }
-    
-    navigate(`/book/${roomId}`);
-  };
 
   if (loading) {
     return (
