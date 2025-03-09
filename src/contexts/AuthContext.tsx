@@ -37,15 +37,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
       if (token && storedUser) {
         try {
-          // Set user immediately from localStorage
           setUser(JSON.parse(storedUser));
           axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
 
-          // Verify token and get fresh user data
           const response = await axios.get('https://api.homestaykashmir.com/api/auth/verify', {
-            headers: { Authorization: `Bearer ${token}` }
+            headers: { Authorization: `Bearer ${token}` },
           });
-          
           const freshUser = response.data.user;
           setUser(freshUser);
           localStorage.setItem('user', JSON.stringify(freshUser));
@@ -71,7 +68,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       const response = await axios.post('https://api.homestaykashmir.com/api/auth/login', {
         email,
         password,
-        userType
+        userType,
       });
 
       const { token, user: userData } = response.data;
@@ -82,28 +79,18 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
       toast.success('Login successful!');
 
-      // Check for pending booking
-      const pendingRoomId = localStorage.getItem('pendingBookingRoomId') || 
-                           (window.__pendingBookingRoomId__ || null);
+      // Check for pending booking and redirect
+      const pendingRoomId = localStorage.getItem('pendingBookingRoomId') || window.__pendingBookingRoomId__;
 
       if (pendingRoomId) {
-        console.log('Found pending booking during login:', pendingRoomId);
-        
-        // Clear storage
+        console.log('Redirecting to booking:', pendingRoomId);
         localStorage.removeItem('pendingBookingRoomId');
-        if (window.__pendingBookingRoomId__) {
-          window.__pendingBookingRoomId__ = null;
-        }
-        
-        // Immediately navigate to booking page
-        navigate(`/book/${pendingRoomId}`);
+        window.__pendingBookingRoomId__ = null;
+        navigate(`/book/${pendingRoomId}`, { replace: true }); // Use replace to avoid stacking history
+      } else if (userData.role === 'admin') {
+        navigate('/admin', { replace: true });
       } else {
-        // Role-based redirection
-        if (userData.role === 'admin') {
-          navigate('/admin');
-        } else {
-          navigate('/profile');
-        }
+        navigate('/profile', { replace: true });
       }
     } catch (error: any) {
       toast.error(error.response?.data?.message || 'Login failed');
@@ -145,15 +132,17 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   return (
-    <AuthContext.Provider value={{
-      user,
-      loading,
-      isAuthenticated: !!user,
-      login,
-      register,
-      logout,
-      updateProfile
-    }}>
+    <AuthContext.Provider
+      value={{
+        user,
+        loading,
+        isAuthenticated: !!user,
+        login,
+        register,
+        logout,
+        updateProfile,
+      }}
+    >
       {children}
     </AuthContext.Provider>
   );
@@ -166,4 +155,5 @@ export const useAuth = () => {
   }
   return context;
 };
+
 export default AuthContext;

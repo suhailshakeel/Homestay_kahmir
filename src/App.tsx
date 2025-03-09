@@ -1,5 +1,5 @@
-import React, { useEffect } from 'react';
-import { BrowserRouter as Router, Routes, Route, useLocation, useNavigate } from 'react-router-dom';
+import React from 'react';
+import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { ToastContainer } from 'react-toastify';
 import { AuthProvider } from './contexts/AuthContext';
 import ProtectedRoute from './components/ProtectedRoute';
@@ -23,31 +23,6 @@ import AdminDashboard from './pages/AdminDashboard';
 
 import 'react-toastify/dist/ReactToastify.css';
 
-// Component to handle direct booking URLs
-const DirectBookingHandler = () => {
-  const location = useLocation();
-  const navigate = useNavigate();
-  
-  useEffect(() => {
-    // Check if this is a direct booking URL
-    const path = location.pathname;
-    if (path.startsWith('/book/')) {
-      const roomId = path.split('/book/')[1];
-      if (roomId) {
-        // Store for after login redirection
-        window.__pendingBookingRoomId__ = roomId;
-        localStorage.setItem('pendingBookingRoomId', roomId);
-        console.log('Stored room ID from direct URL:', roomId);
-        
-        // Redirect to sign in
-        navigate('/signin', { state: { from: location } });
-      }
-    }
-  }, [location, navigate]);
-  
-  return null;
-};
-
 function App() {
   return (
     <Router>
@@ -55,9 +30,6 @@ function App() {
         <div className="min-h-screen flex flex-col">
           <Header />
           <main className="flex-grow pt-16">
-            {/* This component will handle direct booking URLs before auth check */}
-            <DirectBookingHandler />
-            
             <Routes>
               {/* Public Routes */}
               <Route path="/" element={<Home />} />
@@ -72,37 +44,52 @@ function App() {
               <Route path="/forgot-password" element={<ForgotPassword />} />
 
               {/* Protected Routes - Normal Users */}
-              <Route path="/book/:roomId" element={
-                <ProtectedRoute allowedRoles={['user']}>
-                  <BookingPage />
-                </ProtectedRoute>
-              } />
-              <Route path="/transactions" element={
-                <ProtectedRoute allowedRoles={['user']}>
-                  <Transactions />
-                </ProtectedRoute>
-              } />
+              <Route
+                path="/book/:roomId"
+                element={
+                  <ProtectedRoute allowedRoles={['user']}>
+                    <BookingPage />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/transactions"
+                element={
+                  <ProtectedRoute allowedRoles={['user']}>
+                    <Transactions />
+                  </ProtectedRoute>
+                }
+              />
 
               {/* Protected Routes - Home Stayers */}
-              <Route path="/create-ad" element={
-                <ProtectedRoute allowedRoles={['home-stayer']}>
-                  <CreateAd />
-                </ProtectedRoute>
-              } />
+              <Route
+                path="/create-ad"
+                element={
+                  <ProtectedRoute allowedRoles={['home-stayer']}>
+                    <CreateAd />
+                  </ProtectedRoute>
+                }
+              />
 
               {/* Protected Routes - All Authenticated Users */}
-              <Route path="/profile" element={
-                <ProtectedRoute>
-                  <Profile />
-                </ProtectedRoute>
-              } />
+              <Route
+                path="/profile"
+                element={
+                  <ProtectedRoute>
+                    <Profile />
+                  </ProtectedRoute>
+                }
+              />
 
               {/* Admin Routes */}
-              <Route path="/admin/*" element={
-                <ProtectedRoute allowedRoles={['admin']}>
-                  <AdminDashboard />
-                </ProtectedRoute>
-              } />
+              <Route
+                path="/admin/*"
+                element={
+                  <ProtectedRoute allowedRoles={['admin']}>
+                    <AdminDashboard />
+                  </ProtectedRoute>
+                }
+              />
             </Routes>
           </main>
           <Footer />

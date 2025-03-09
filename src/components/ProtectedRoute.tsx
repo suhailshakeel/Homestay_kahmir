@@ -8,10 +8,10 @@ interface ProtectedRouteProps {
   redirectPath?: string;
 }
 
-const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ 
-  children, 
+const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
+  children,
   allowedRoles = ['user', 'home-stayer', 'admin'],
-  redirectPath = '/signin'
+  redirectPath = '/signin',
 }) => {
   const { user, isAuthenticated, loading } = useAuth();
   const location = useLocation();
@@ -25,12 +25,13 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
   }
 
   if (!isAuthenticated) {
-    const currentState = {
-      from: location,
-      bookingIntent: sessionStorage.getItem('bookingIntent')
-    };
-  
-    return <Navigate to={redirectPath} state={currentState} replace />;
+    // Store the intended destination only if it’s a booking page
+    if (location.pathname.startsWith('/book/')) {
+      const roomId = location.pathname.split('/book/')[1];
+      localStorage.setItem('pendingBookingRoomId', roomId);
+      window.__pendingBookingRoomId__ = roomId;
+    }
+    return <Navigate to={redirectPath} state={{ from: location }} replace />;
   }
 
   if (user && !allowedRoles.includes(user.role)) {
