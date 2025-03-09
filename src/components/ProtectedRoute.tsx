@@ -25,8 +25,14 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
   }
 
   if (!isAuthenticated) {
-    return <Navigate to={redirectPath} state={{ from: location }} replace />;
-  }
+  // Preserve both location and booking intent
+  const currentState = {
+    from: location,
+    bookingIntent: sessionStorage.getItem('bookingIntent')
+  };
+  
+  return <Navigate to={redirectPath} state={currentState} replace />;
+}
 
   if (user && !allowedRoles.includes(user.role)) {
     return <Navigate to="/" replace />;
