@@ -83,6 +83,7 @@ const BookingPage = () => {
         const response = await axios.get(`https://api.homestaykashmir.com/api/rooms/${roomId}`, {
           headers: { Authorization: `Bearer ${localStorage.getItem('token')}` },
         });
+        console.log('Room API response:', response.data); // Debug log
         setRoom(response.data);
       } catch (error: any) {
         setError(error.response?.data?.message || 'Failed to fetch room details');
@@ -225,7 +226,7 @@ const BookingPage = () => {
             </div>
             <div>
               <h3 className="text-lg font-medium mb-2">Nearby Places</h3>
-              {room?.nearbyPlaces ? (
+              {room?.nearbyPlaces && (room.nearbyPlaces.hospital || room.nearbyPlaces.market || room.nearbyPlaces.tourist) ? (
                 <ul className="list-disc list-inside text-gray-600">
                   <li>Hospital: {room.nearbyPlaces.hospital || 'N/A'}</li>
                   <li>Market: {room.nearbyPlaces.market || 'N/A'}</li>

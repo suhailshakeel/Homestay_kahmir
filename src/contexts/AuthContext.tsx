@@ -37,19 +37,31 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
       if (token && storedUser) {
         try {
-          setUser(JSON.parse(storedUser));
+          const parsedUser = JSON.parse(storedUser);
+          setUser(parsedUser);
           axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
 
-          const response = await axios.get('https://api.homestaykashmir.com/api/auth/verify', {
-            headers: { Authorization: `Bearer ${token}` },
-          });
-          const freshUser = response.data.user;
-          setUser(freshUser);
-          localStorage.setItem('user', JSON.stringify(freshUser));
-        } catch (error) {
+          try {
+            const response = await axios.get('https://api.homestaykashmir.com/api/auth/verify', {
+              headers: { Authorization: `Bearer ${token}` },
+            });
+            const freshUser = response.data.user;
+            setUser(freshUser);
+            localStorage.setItem('user', JSON.stringify(freshUser));
+          } catch (verifyError: any) {
+            console.warn('Verify endpoint failed, using stored user:', verifyError.response?.status);
+            // Only clear if token is invalid (401), not 404
+            if (verifyError.response?.status === 401) {
+              localStorage.removeItem('token');
+              localStorage.removeItem('user');
+              delete axios.defaults.headers.common['Authorization'];
+              setUser(null);
+            }
+          }
+        } catch (parseError) {
+          console.error('Failed to parse stored user:', parseError);
           localStorage.removeItem('token');
           localStorage.removeItem('user');
-          delete axios.defaults.headers.common['Authorization'];
           setUser(null);
         }
       } else {
@@ -79,14 +91,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
       toast.success('Login successful!');
 
-      // Check for pending booking and redirect
       const pendingRoomId = localStorage.getItem('pendingBookingRoomId') || window.__pendingBookingRoomId__;
 
       if (pendingRoomId) {
         console.log('Redirecting to booking:', pendingRoomId);
         localStorage.removeItem('pendingBookingRoomId');
         window.__pendingBookingRoomId__ = null;
-        navigate(`/book/${pendingRoomId}`, { replace: true }); // Use replace to avoid stacking history
+        navigate(`/book/${pendingRoomId}`, { replace: true });
       } else if (userData.role === 'admin') {
         navigate('/admin', { replace: true });
       } else {

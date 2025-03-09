@@ -3,6 +3,7 @@ import jwt from 'jsonwebtoken';
 import bcrypt from 'bcryptjs';
 import User from '../models/User.js';
 import { sendEmail } from '../utils/email.js';
+import { auth } from '../middleware/auth.js'; // Import the auth middleware
 
 const router = express.Router();
 
@@ -124,6 +125,17 @@ router.post('/create-admin', async (req, res) => {
     res.status(201).json({ message: 'Admin account created successfully' });
   } catch (error) {
     res.status(500).json({ message: error.message });
+  }
+});
+
+// New verify route
+router.get('/api/auth/verify', auth, (req, res) => {
+  try {
+    // req.user is set by the auth middleware
+    const user = req.user;
+    res.json({ user }); // Return the user object
+  } catch (error) {
+    res.status(500).json({ message: 'Internal server error' }); // Handle unexpected errors
   }
 });
 
