@@ -38,23 +38,26 @@ const Rooms: React.FC = () => {
     handleDirectBooking();
   }, [location, navigate]);
 
-  const handleBookRoom = (roomId: string) => {
-    const bookingIntent = {
-      path: `/book/${roomId}`,
-      search: window.location.search,
-      timestamp: Date.now()
-    };
-
-    sessionStorage.setItem('bookingIntent', JSON.stringify(bookingIntent));
-    navigate('/signin', { 
-      state: { 
-        from: {
-          pathname: `/book/${roomId}`,
-          search: window.location.search
-        }
-      } 
-    });
+ const handleBookRoom = (roomId: string) => {
+  const bookingIntent = {
+    path: `/book/${roomId}`,
+    search: window.location.search,
+    timestamp: Date.now()
   };
+
+  // Store in both sessionStorage and registration redirect
+  sessionStorage.setItem('bookingIntent', JSON.stringify(bookingIntent));
+  sessionStorage.setItem('registrationRedirect', JSON.stringify(bookingIntent));
+  
+  navigate('/signin', { 
+    state: { 
+      from: {
+        pathname: `/book/${roomId}`,
+        search: window.location.search
+      }
+    } 
+  });
+};
 
   // Fetch rooms and render logic remain same...
 
