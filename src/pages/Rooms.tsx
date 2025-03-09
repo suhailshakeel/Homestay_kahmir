@@ -4,6 +4,18 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import RoomCard from '../components/rooms/RoomCard';
 import { Room } from '../interfaces/Room';
 
+// Create a global variable to persist across page navigations
+declare global {
+  interface Window {
+    __pendingBookingRoomId__: string | null;
+  }
+}
+
+// Initialize if not already set
+if (typeof window.__pendingBookingRoomId__ === 'undefined') {
+  window.__pendingBookingRoomId__ = null;
+}
+
 const Rooms: React.FC = () => {
   const [rooms, setRooms] = useState<Room[]>([]);
   const [loading, setLoading] = useState(true);
@@ -12,44 +24,57 @@ const Rooms: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
 
-  // Check authentication and handle URL parameters
+  // Process any direct booking URLs before authentication check
   useEffect(() => {
-    const checkAuth = () => {
+    const processDirectBookingUrl = () => {
+      const path = window.location.pathname;
+      
+      // If this is a direct booking URL
+      if (path.startsWith('/book/')) {
+        const roomId = path.split('/book/')[1];
+        if (roomId) {
+          // Store the room ID in the global variable
+          window.__pendingBookingRoomId__ = roomId;
+          
+          // Also store in localStorage as backup
+          localStorage.setItem('pendingBookingRoomId', roomId);
+        }
+      }
+    };
+    
+    processDirectBookingUrl();
+  }, []);
+
+  // Check authentication status and handle pending bookings
+  useEffect(() => {
+    const checkAuthAndRedirect = () => {
       const userToken = localStorage.getItem('token');
       const isAuth = !!userToken;
       setIsAuthenticated(isAuth);
 
-      // If authenticated, check URL params for booking redirection
+      // If user is authenticated, check for pending booking
       if (isAuth) {
-        // Get URL search parameters
-        const searchParams = new URLSearchParams(window.location.search);
-        const bookingRoomId = searchParams.get('bookingRoom');
+        // Try to get the room ID from the global variable first
+        let pendingRoomId = window.__pendingBookingRoomId__;
         
-        if (bookingRoomId) {
-          // Remove param from URL to prevent repeated redirects
-          const newUrl = window.location.pathname;
-          window.history.replaceState({}, document.title, newUrl);
+        // If not available, try localStorage as backup
+        if (!pendingRoomId) {
+          pendingRoomId = localStorage.getItem('pendingBookingRoomId');
+        }
+        
+        if (pendingRoomId) {
+          // Clear the stored values
+          window.__pendingBookingRoomId__ = null;
+          localStorage.removeItem('pendingBookingRoomId');
           
-          // Redirect to booking page
-          navigate(`/book/${bookingRoomId}`);
+          // Redirect to the booking page
+          navigate(`/book/${pendingRoomId}`);
         }
       }
     };
-    checkAuth();
-  }, [navigate, location]);
-
-  // Detect direct booking URLs
-  useEffect(() => {
-    const path = window.location.pathname;
     
-    // If this is a direct booking URL and user is not authenticated
-    if (path.startsWith('/book/') && !isAuthenticated) {
-      const roomId = path.split('/book/')[1];
-      
-      // Redirect to sign-in with room ID as a query parameter
-      navigate(`/signin?bookingRoom=${roomId}`);
-    }
-  }, [isAuthenticated, navigate]);
+    checkAuthAndRedirect();
+  }, [navigate]);
 
   // Fetch available rooms
   useEffect(() => {
@@ -64,16 +89,21 @@ const Rooms: React.FC = () => {
         setLoading(false);
       }
     };
+    
     fetchRooms();
   }, []);
 
-  // Handle booking a room
+  // Handle booking a room through normal flow
   const handleBookRoom = (roomId: string) => {
     if (!isAuthenticated) {
-      // Redirect to sign-in with the room ID as a query parameter
-      navigate(`/signin?bookingRoom=${roomId}`);
+      // Store the room ID before redirecting
+      window.__pendingBookingRoomId__ = roomId;
+      localStorage.setItem('pendingBookingRoomId', roomId);
+      
+      navigate('/signin');
       return;
     }
+    
     navigate(`/book/${roomId}`);
   };
 
@@ -102,6 +132,7 @@ const Rooms: React.FC = () => {
   return (
     <div className="container mx-auto px-4 py-8">
       <h1 className="text-3xl font-bold mb-8">Available Rooms</h1>
+      
       {rooms.length === 0 ? (
         <div className="text-center text-gray-600">
           <p>No rooms available at the moment.</p>
