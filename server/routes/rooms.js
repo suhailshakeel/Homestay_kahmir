@@ -54,31 +54,36 @@ router.get('/', async (req, res) => {
       .lean();
 
     // Transform and validate room data
-    rooms = rooms.map(room => ({
-      _id: room._id,
-      title: room.title || 'Untitled Room',
-      description: room.description || 'No description available',
-      price: room.price || 0,
-      location: {
-        lat: room.location?.lat || null,
-        lng: room.location?.lng || null,
-        _id: room.location?._id || room._id
-      },
-      images: room.images || [],
-      amenities: room.amenities || [],
-      nearbyPlaces: {
-        hospital: room.nearbyPlaces?.hospital || '',
-        market: room.nearbyPlaces?.market || '',
-        tourist: Array.isArray(room.nearbyPlaces?.tourist) ? room.nearbyPlaces.tourist : []
-      },
-      owner: room.owner || null,
-      status: room.status || 'available',
-      furnished: !!room.furnished,
-      ac: !!room.ac,
-      heater: !!room.heater,
-      createdAt: room.createdAt,
-      updatedAt: room.updatedAt
-    }));
+    rooms = rooms.map(room => {
+      const nearbyPlacesMap = room.nearbyPlaces || new Map();
+      return {
+        _id: room._id,
+        title: room.title || 'Untitled Room',
+        description: room.description || 'No description available',
+        price: room.price || 0,
+        location: {
+          lat: room.location?.lat || null,
+          lng: room.location?.lng || null,
+          _id: room.location?._id || room._id
+        },
+        images: room.images || [],
+        amenities: room.amenities || [],
+        nearbyPlaces: {
+          hospital: nearbyPlacesMap.get('hospital')?.available ? nearbyPlacesMap.get('hospital').distance?.toString() || 'N/A' : 'N/A',
+          market: nearbyPlacesMap.get('market')?.available ? nearbyPlacesMap.get('market').distance?.toString() || 'N/A' : 'N/A',
+          tourist: nearbyPlacesMap.get('tourist')?.available 
+            ? (Array.isArray(nearbyPlacesMap.get('tourist').distance) ? nearbyPlacesMap.get('tourist').distance : []).map(d => d.toString())
+            : []
+        },
+        owner: room.owner || null,
+        status: room.status || 'available',
+        furnished: !!room.furnished,
+        ac: !!room.ac,
+        heater: !!room.heater,
+        createdAt: room.createdAt,
+        updatedAt: room.updatedAt
+      };
+    });
 
     res.json(rooms);
   } catch (error) {
@@ -99,6 +104,7 @@ router.get('/:id', async (req, res) => {
     }
 
     // Transform and validate room data
+    const nearbyPlacesMap = room.nearbyPlaces || new Map();
     const transformedRoom = {
       _id: room._id,
       title: room.title || 'Untitled Room',
@@ -112,9 +118,11 @@ router.get('/:id', async (req, res) => {
       images: room.images || [],
       amenities: room.amenities || [],
       nearbyPlaces: {
-        hospital: room.nearbyPlaces?.hospital || '',
-        market: room.nearbyPlaces?.market || '',
-        tourist: Array.isArray(room.nearbyPlaces?.tourist) ? room.nearbyPlaces.tourist : []
+        hospital: nearbyPlacesMap.get('hospital')?.available ? nearbyPlacesMap.get('hospital').distance?.toString() || 'N/A' : 'N/A',
+        market: nearbyPlacesMap.get('market')?.available ? nearbyPlacesMap.get('market').distance?.toString() || 'N/A' : 'N/A',
+        tourist: nearbyPlacesMap.get('tourist')?.available 
+          ? (Array.isArray(nearbyPlacesMap.get('tourist').distance) ? nearbyPlacesMap.get('tourist').distance : []).map(d => d.toString())
+          : []
       },
       owner: room.owner || null,
       status: room.status || 'available',
@@ -158,6 +166,9 @@ router.post('/', auth, upload.array('images', 10), async (req, res) => {
       return res.status(400).json({ message: 'Invalid location data' });
     }
 
+    // Parse nearbyPlaces as a Map
+    const nearbyPlacesMap = new Map(Object.entries(JSON.parse(nearbyPlaces)));
+
     const room = new Room({
       title,
       description,
@@ -165,7 +176,7 @@ router.post('/', auth, upload.array('images', 10), async (req, res) => {
       location: locationObj,
       images: req.files.map(file => file.path),
       amenities: amenities ? amenities.split(',') : [],
-      nearbyPlaces: JSON.parse(nearbyPlaces),
+      nearbyPlaces: nearbyPlacesMap,
       owner: req.user._id,
       furnished: furnished === 'true',
       ac: ac === 'true',
@@ -252,7 +263,7 @@ router.put('/:id', auth, upload.array('images', 10), async (req, res) => {
     }
 
     if (updates.nearbyPlaces) {
-      updates.nearbyPlaces = JSON.parse(updates.nearbyPlaces);
+      updates.nearbyPlaces = new Map(Object.entries(JSON.parse(updates.nearbyPlaces)));
     }
 
     if (updates.amenities) {
