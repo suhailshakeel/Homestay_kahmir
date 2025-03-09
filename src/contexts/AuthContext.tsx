@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { toast } from 'react-toastify';
 import axios from 'axios';
 
@@ -29,8 +29,43 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
+  const location = useLocation();
 
-  // Initialization and verification logic remains same...
+  useEffect(() => {
+    const initializeAuth = async () => {
+      const token = localStorage.getItem('token');
+      const storedUser = localStorage.getItem('user');
+
+      if (token && storedUser) {
+        try {
+          // Set user immediately from localStorage
+          setUser(JSON.parse(storedUser));
+          axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
+
+          // Verify token and get fresh user data
+          const response = await axios.get('https://api.homestaykashmir.com/api/auth/verify', {
+            headers: { Authorization: `Bearer ${token}` }
+          });
+          
+          const freshUser = response.data.user;
+          setUser(freshUser);
+          localStorage.setItem('user', JSON.stringify(freshUser));
+        } catch (error) {
+          localStorage.removeItem('token');
+          localStorage.removeItem('user');
+          delete axios.defaults.headers.common['Authorization'];
+          setUser(null);
+        }
+      } else {
+        localStorage.removeItem('token');
+        localStorage.removeItem('user');
+        setUser(null);
+      }
+      setLoading(false);
+    };
+
+    initializeAuth();
+  }, []);
 
   const login = async (email: string, password: string, userType: string) => {
     try {
@@ -45,38 +80,76 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       localStorage.setItem('user', JSON.stringify(userData));
       axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
       setUser(userData);
+
       toast.success('Login successful!');
+
+      // Check for redirect state first (from ProtectedRoute)
+      const from = location.state?.from;
+      const redirectPath = from?.pathname;
+      
+      // Then check for pending booking
+      const pendingRoomId = localStorage.getItem('pendingBookingRoomId') || (window as any).__pendingBookingRoomId__;
+
+      // Prioritize redirect decisions
+      if (redirectPath && redirectPath.startsWith('/book/')) {
+        // If we were trying to access a booking page directly
+        navigate(redirectPath);
+      } else if (pendingRoomId) {
+        // If we have a pending booking from another flow
+        localStorage.removeItem('pendingBookingRoomId');
+        if ((window as any).__pendingBookingRoomId__) {
+          (window as any).__pendingBookingRoomId__ = null;
+        }
+        navigate(`/book/${pendingRoomId}`);
+      } else if (redirectPath) {
+        // For any other protected route we were trying to access
+        navigate(redirectPath);
+      } else {
+        // Default behavior - Role-based redirection
+        if (userData.role === 'admin') {
+          navigate('/admin');
+        } else {
+          navigate('/profile');
+        }
+      }
     } catch (error: any) {
       toast.error(error.response?.data?.message || 'Login failed');
       throw error;
     }
   };
 
- const register = async (userData: any) => {
-  try {
-    await axios.post('https://api.homestaykashmir.com/api/auth/register', userData);
-    toast.success('Registration successful! Please login.');
-    
-    // Clear any existing booking intent
-    sessionStorage.removeItem('bookingIntent');
-    
-    // Get registration redirect from state
-    const registrationRedirect = sessionStorage.getItem('registrationRedirect');
-    
-    navigate('/signin', {
-      state: {
-        registrationRedirect: registrationRedirect 
-          ? JSON.parse(registrationRedirect)
-          : null
-      }
-    });
-  } catch (error: any) {
-    toast.error(error.response?.data?.message || 'Registration failed');
-    throw error;
-  }
-};
+  const register = async (userData: any) => {
+    try {
+      await axios.post('https://api.homestaykashmir.com/api/auth/register', userData);
+      toast.success('Registration successful! Please login.');
+      navigate('/signin');
+    } catch (error: any) {
+      toast.error(error.response?.data?.message || 'Registration failed');
+      throw error;
+    }
+  };
 
-  // logout and updateProfile remain same...
+  const logout = () => {
+    localStorage.removeItem('token');
+    localStorage.removeItem('user');
+    delete axios.defaults.headers.common['Authorization'];
+    setUser(null);
+    toast.success('Logged out successfully');
+    navigate('/');
+  };
+
+  const updateProfile = async (data: Partial<User>) => {
+    try {
+      const response = await axios.put('https://api.homestaykashmir.com/api/users/profile', data);
+      const updatedUser = response.data;
+      setUser(updatedUser);
+      localStorage.setItem('user', JSON.stringify(updatedUser));
+      toast.success('Profile updated successfully');
+    } catch (error: any) {
+      toast.error(error.response?.data?.message || 'Failed to update profile');
+      throw error;
+    }
+  };
 
   return (
     <AuthContext.Provider value={{
@@ -100,3 +173,4 @@ export const useAuth = () => {
   }
   return context;
 };
+export default AuthContext;
