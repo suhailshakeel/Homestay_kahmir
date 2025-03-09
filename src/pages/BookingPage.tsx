@@ -82,13 +82,20 @@ const BookingPage = () => {
       try {
         const response = await axios.get(`https://api.homestaykashmir.com/api/rooms/${roomId}`, {
           headers: { Authorization: `Bearer ${localStorage.getItem('token')}` },
+          withCredentials: true, // Ensure credentials are sent if needed
         });
-        console.log('Room API response:', response.data); // Debug log
+        console.log('Room API response:', response.data); // Log the full response
         setRoom(response.data);
       } catch (error: any) {
+        console.error('Failed to fetch room:', {
+          status: error.response?.status,
+          statusText: error.response?.statusText,
+          data: error.response?.data,
+          message: error.message,
+        });
         setError(error.response?.data?.message || 'Failed to fetch room details');
       } finally {
-        setLoading(false);
+        setLoading(false); // Ensure loading state is reset
       }
     };
 
@@ -226,11 +233,11 @@ const BookingPage = () => {
             </div>
             <div>
               <h3 className="text-lg font-medium mb-2">Nearby Places</h3>
-              {room?.nearbyPlaces && (room.nearbyPlaces.hospital || room.nearbyPlaces.market || room.nearbyPlaces.tourist) ? (
+              {room?.nearbyPlaces && (room.nearbyPlaces.hospital || room.nearbyPlaces.market || room.nearbyPlaces.tourist?.length > 0) ? (
                 <ul className="list-disc list-inside text-gray-600">
                   <li>Hospital: {room.nearbyPlaces.hospital || 'N/A'}</li>
                   <li>Market: {room.nearbyPlaces.market || 'N/A'}</li>
-                  <li>Tourist Spots: {room.nearbyPlaces.tourist?.length > 0 ? room.nearbyPlaces.tourist.join(', ') : 'None'}</li>
+                  <li>Tourist Spots: {room.nearbyPlaces.tourist?.length > 0 ? room.nearbyPlaces.tourist.join(', ') : 'N/A'}</li>
                 </ul>
               ) : (
                 <p className="text-gray-500">No nearby places listed</p>
@@ -294,6 +301,7 @@ const BookingPage = () => {
           <button
             type="submit"
             className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+            disabled={!room || !user} // Disable if room or user is null
           >
             Proceed to Payment
           </button>

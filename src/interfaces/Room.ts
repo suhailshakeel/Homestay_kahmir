@@ -29,5 +29,34 @@ interface Location {
       email: string;
     } | null;
     createdAt: string;
-    updatedAt: string;
+    updatedAt: string;// interfaces/Room.ts
+    export interface Room {
+      _id: string;
+      title: string;
+      description: string;
+      price: number;
+      location: {
+        lat: number | null;
+        lng: number | null;
+        _id: string;
+      };
+      images: string[];
+      amenities: string[];
+      nearbyPlaces: {
+        hospital: string;
+        market: string;
+        tourist: string[];
+      };
+      owner: {
+        _id: string;
+        name: string;
+        email: string;
+      } | null;
+      status: string;
+      furnished: boolean;
+      ac: boolean;
+      heater: boolean;
+      createdAt: string;
+      updatedAt: string;
+    }
   }
