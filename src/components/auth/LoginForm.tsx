@@ -15,7 +15,7 @@ interface LoginFormProps {
 const LoginForm: React.FC<LoginFormProps> = ({ userType }) => {
   const { login } = useAuth();
   const navigate = useNavigate();
-
+  
   const {
     register,
     handleSubmit,
@@ -31,7 +31,11 @@ const LoginForm: React.FC<LoginFormProps> = ({ userType }) => {
 
   const onSubmit = async (data: any) => {
     try {
+      // The original login function
       await login(data.email, data.password, userType);
+      
+      // After successful login, check for pending booking
+      // This will be handled by the effect in SignIn.tsx
     } catch (error: any) {
       setError('email', {
         type: 'manual',
@@ -51,7 +55,6 @@ const LoginForm: React.FC<LoginFormProps> = ({ userType }) => {
         error={errors.email?.message}
         {...register('email')}
       />
-
       <FormInput
         id="password"
         type="password"
@@ -61,7 +64,6 @@ const LoginForm: React.FC<LoginFormProps> = ({ userType }) => {
         error={errors.password?.message}
         {...register('password')}
       />
-
       <div className="flex items-center justify-between">
         <div className="text-sm">
           <Link 
@@ -72,11 +74,11 @@ const LoginForm: React.FC<LoginFormProps> = ({ userType }) => {
           </Link>
         </div>
       </div>
-
       <SubmitButton loading={isSubmitting}>
         Sign in as {userType === 'user' ? 'Normal User' : 'Home Stayer'}
       </SubmitButton>
     </form>
   );
 };
+
 export default LoginForm;
