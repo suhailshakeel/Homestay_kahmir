@@ -136,8 +136,12 @@ router.get('/:id', async (req, res) => {
     console.log('Transformed room response:', transformedRoom); // Debug log
     res.json(transformedRoom);
   } catch (error) {
-    console.error('Error fetching room:', error);
-    res.status(500).json({ message: 'Server error' });
+    console.error('Error fetching room:', error); // Detailed error log
+    res.status(500).json({ 
+      message: 'Server error', 
+      error: error.message, 
+      stack: error.stack // Include stack trace for debugging
+    });
   }
 });
 
