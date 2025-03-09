@@ -13,39 +13,42 @@ const SignIn = () => {
 
   useEffect(() => {
     if (isAuthenticated && user) {
-      // Get all possible redirect sources
+      // Get redirect sources in priority order
       const redirectSources = {
-        fromProtectedRoute: location.state?.from,
-        pendingBooking: sessionStorage.getItem('pendingBooking'),
-        queryParam: new URLSearchParams(location.search).get('redirect')
+        fromState: location.state?.from,
+        sessionStorage: sessionStorage.getItem('bookingIntent'),
+        registrationRedirect: location.state?.registrationRedirect
       };
 
       // Clean up storage
-      sessionStorage.removeItem('pendingBooking');
-      
-      // Determine redirect path with priority
-      const redirectPath = redirectSources.fromProtectedRoute?.pathname ||
-                         (redirectSources.pendingBooking ? JSON.parse(redirectSources.pendingBooking).path : null) ||
-                         redirectSources.queryParam;
+      sessionStorage.removeItem('bookingIntent');
 
-      // Preserve query parameters
-      const searchParams = new URLSearchParams(
-        redirectSources.fromProtectedRoute?.search ||
-        (redirectSources.pendingBooking ? JSON.parse(redirectSources.pendingBooking).search : '') ||
-        location.search
-      );
+      // Determine final path
+      let finalPath = '/profile';
+      let finalSearch = '';
 
-      if (redirectPath) {
-        navigate({
-          pathname: redirectPath,
-          search: searchParams.toString()
-        }, { replace: true });
-      } else {
-        // Default role-based redirect
-        navigate(user.role === 'admin' ? '/admin' : '/profile', { replace: true });
+      if (redirectSources.fromState) {
+        finalPath = redirectSources.fromState.pathname;
+        finalSearch = redirectSources.fromState.search;
+      } else if (redirectSources.sessionStorage) {
+        const stored = JSON.parse(redirectSources.sessionStorage);
+        finalPath = stored.path;
+        finalSearch = stored.search;
+      } else if (redirectSources.registrationRedirect) {
+        const stored = redirectSources.registrationRedirect;
+        finalPath = stored.path;
+        finalSearch = stored.search;
       }
+
+      // Admin override
+      if (user.role === 'admin') finalPath = '/admin';
+
+      navigate(
+        { pathname: finalPath, search: finalSearch },
+        { replace: true }
+      );
     }
-  }, [isAuthenticated, navigate, location, user]);
+  }, [isAuthenticated, navigate, location.state, user]);
 
   return (
     <AuthLayout 
