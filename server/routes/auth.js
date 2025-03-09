@@ -3,7 +3,7 @@ import jwt from 'jsonwebtoken';
 import bcrypt from 'bcryptjs';
 import User from '../models/User.js';
 import { sendEmail } from '../utils/email.js';
-import { auth } from '../middleware/auth.js'; // Import the auth middleware
+import { auth } from '../middleware/auth.js';
 
 const router = express.Router();
 
@@ -128,14 +128,28 @@ router.post('/create-admin', async (req, res) => {
   }
 });
 
-// New verify route
-router.get('/api/auth/verify', auth, (req, res) => {
+// Updated verify route
+router.get('/verify', auth, async (req, res) => {
   try {
-    // req.user is set by the auth middleware
-    const user = req.user;
-    res.json({ user }); // Return the user object
+    // Fetch user from database to ensure fresh data
+    const user = await User.findById(req.user._id).select('-password');
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+    res.json({
+      user: {
+        id: user._id,
+        name: user.name,
+        email: user.email,
+        role: user.role,
+        phone: user.phone,
+        address: user.address,
+        aadhaarNumber: user.aadhaarNumber
+      }
+    });
   } catch (error) {
-    res.status(500).json({ message: 'Internal server error' }); // Handle unexpected errors
+    console.error('Verify error:', error);
+    res.status(500).json({ message: 'Internal server error' });
   }
 });
 

@@ -1,4 +1,3 @@
-
 import express from 'express';
 import { auth } from '../middleware/auth.js';
 import Room from '../models/Room.js';
@@ -92,13 +91,41 @@ router.get('/', async (req, res) => {
 router.get('/:id', async (req, res) => {
   try {
     const room = await Room.findById(req.params.id)
-      .populate('owner', 'name email');
+      .populate('owner', 'name email')
+      .lean();
     
     if (!room) {
       return res.status(404).json({ message: 'Room not found' });
     }
+
+    // Transform and validate room data (same as GET / route)
+    const transformedRoom = {
+      _id: room._id,
+      title: room.title || 'Untitled Room',
+      description: room.description || 'No description available',
+      price: room.price || 0,
+      location: {
+        lat: room.location?.lat || null,
+        lng: room.location?.lng || null,
+        _id: room.location?._id || room._id
+      },
+      images: room.images || [],
+      amenities: room.amenities || [],
+      nearbyPlaces: {
+        hospital: room.nearbyPlaces?.hospital || '',
+        market: room.nearbyPlaces?.market || '',
+        tourist: Array.isArray(room.nearbyPlaces?.tourist) ? room.nearbyPlaces.tourist : []
+      },
+      owner: room.owner || null,
+      status: room.status || 'available',
+      furnished: !!room.furnished,
+      ac: !!room.ac,
+      heater: !!room.heater,
+      createdAt: room.createdAt,
+      updatedAt: room.updatedAt
+    };
     
-    res.json(room);
+    res.json(transformedRoom);
   } catch (error) {
     console.error('Error fetching room:', error);
     res.status(500).json({ message: 'Server error' });
@@ -153,7 +180,6 @@ router.post('/', auth, upload.array('images', 10), async (req, res) => {
 });
 
 // Book a room
-// Update the booking route
 router.post('/:id/book', auth, upload.array('documents', 5), async (req, res) => {
   try {
     const { paymentId, orderId } = req.body;
