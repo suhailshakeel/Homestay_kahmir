@@ -13,37 +13,39 @@ const SignIn = () => {
 
   useEffect(() => {
     if (isAuthenticated && user) {
-      const pendingRoomId = localStorage.getItem('pendingBookingRoomId') || 
-                          (window as any).__pendingBookingRoomId__;
+      // Get all possible redirect sources
+      const redirectSources = {
+        fromProtectedRoute: location.state?.from,
+        pendingBooking: sessionStorage.getItem('pendingBooking'),
+        queryParam: new URLSearchParams(location.search).get('redirect')
+      };
+
+      // Clean up storage
+      sessionStorage.removeItem('pendingBooking');
       
-      // Get redirect path in priority order:
-      // 1. ProtectedRoute redirect state
-      // 2. Pending booking from direct URL
-      // 3. Default role-based redirect
-      const returnPath = location.state?.from?.pathname || 
-                       (pendingRoomId ? `/book/${pendingRoomId}` : null);
+      // Determine redirect path with priority
+      const redirectPath = redirectSources.fromProtectedRoute?.pathname ||
+                         (redirectSources.pendingBooking ? JSON.parse(redirectSources.pendingBooking).path : null) ||
+                         redirectSources.queryParam;
 
-      // Clear any booking storage
-      if (pendingRoomId) {
-        localStorage.removeItem('pendingBookingRoomId');
-        if ((window as any).__pendingBookingRoomId__) {
-          (window as any).__pendingBookingRoomId__ = null;
-        }
-      }
+      // Preserve query parameters
+      const searchParams = new URLSearchParams(
+        redirectSources.fromProtectedRoute?.search ||
+        (redirectSources.pendingBooking ? JSON.parse(redirectSources.pendingBooking).search : '') ||
+        location.search
+      );
 
-      // Handle the redirect
-      if (returnPath) {
-        navigate(returnPath);
+      if (redirectPath) {
+        navigate({
+          pathname: redirectPath,
+          search: searchParams.toString()
+        }, { replace: true });
       } else {
         // Default role-based redirect
-        if (user.role === 'admin') {
-          navigate('/admin');
-        } else {
-          navigate('/profile');
-        }
+        navigate(user.role === 'admin' ? '/admin' : '/profile', { replace: true });
       }
     }
-  }, [isAuthenticated, navigate, location.state, user]);
+  }, [isAuthenticated, navigate, location, user]);
 
   return (
     <AuthLayout 
