@@ -11,23 +11,29 @@ const SignIn = () => {
   const { isAuthenticated } = useAuth();
   const location = useLocation();
 
-  // Store pending booking ID if redirected from a booking page
   useEffect(() => {
     const path = location.state?.from?.pathname || '';
     if (path.startsWith('/book/')) {
-      const roomId = path.replace('/book/', '');
+      const roomId = path.split('/book/')[1];
       if (roomId) {
-        sessionStorage.setItem('pendingBookingRoomId', roomId);
+        window.__pendingBookingRoomId__ = roomId;
+        localStorage.setItem('pendingBookingRoomId', roomId);
+        console.log('Stored pending booking ID:', roomId);
       }
     }
   }, [location]);
 
-  // Redirect to pending booking room after login
   useEffect(() => {
     if (isAuthenticated) {
-      const pendingRoomId = sessionStorage.getItem('pendingBookingRoomId');
+      const pendingRoomId = localStorage.getItem('pendingBookingRoomId') || 
+                            window.__pendingBookingRoomId__;
+      
       if (pendingRoomId) {
-        sessionStorage.removeItem('pendingBookingRoomId'); // Clean up
+        console.log('Redirecting to booking:', pendingRoomId);
+        
+        localStorage.removeItem('pendingBookingRoomId');
+        window.__pendingBookingRoomId__ = null;
+        
         navigate(`/book/${pendingRoomId}`);
       }
     }
@@ -39,13 +45,20 @@ const SignIn = () => {
       subtitle="Please enter your details to continue"
     >
       <LoginForm userType={isHomeStayer ? 'home-stayer' : 'user'} />
+      
       <div className="mt-6">
-        <UserTypeToggle isHomeStayer={isHomeStayer} onToggle={() => setIsHomeStayer(!isHomeStayer)} />
+        <UserTypeToggle
+          isHomeStayer={isHomeStayer}
+          onToggle={() => setIsHomeStayer(!isHomeStayer)}
+        />
       </div>
       <div className="mt-4 text-center">
         <p className="text-sm text-gray-600">
           Don't have an account?{' '}
-          <Link to="/signup" className="font-medium text-indigo-600 hover:text-indigo-500">
+          <Link
+            to="/signup"
+            className="font-medium text-indigo-600 hover:text-indigo-500"
+          >
             Sign up
           </Link>
         </p>

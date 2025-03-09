@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import axios from 'axios';
 import { useNavigate, useLocation } from 'react-router-dom';
 import RoomCard from '../components/rooms/RoomCard';
 import { Room } from '../interfaces/Room';
@@ -18,15 +19,18 @@ const Rooms: React.FC = () => {
         const bookingIntent = {
           path: `/book/${roomId}`,
           search: location.search,
-          timestamp: Date.now(),
+          timestamp: Date.now()
         };
 
-        // Store in session storage for later redirection
-        sessionStorage.setItem('pendingBooking', JSON.stringify(bookingIntent));
-
+        sessionStorage.setItem('bookingIntent', JSON.stringify(bookingIntent));
         navigate('/signin', {
-          state: { from: { pathname: `/book/${roomId}`, search: location.search } },
-          replace: true,
+          state: { 
+            from: {
+              pathname: `/book/${roomId}`,
+              search: location.search
+            }
+          },
+          replace: true
         });
       }
     };
@@ -38,21 +42,26 @@ const Rooms: React.FC = () => {
     const bookingIntent = {
       path: `/book/${roomId}`,
       search: window.location.search,
-      timestamp: Date.now(),
+      timestamp: Date.now()
     };
 
-    // Store booking intent in session storage
-    sessionStorage.setItem('pendingBooking', JSON.stringify(bookingIntent));
-
-    navigate('/signin', {
-      state: { from: { pathname: `/book/${roomId}`, search: window.location.search } },
+    sessionStorage.setItem('bookingIntent', JSON.stringify(bookingIntent));
+    sessionStorage.setItem('registrationRedirect', JSON.stringify(bookingIntent));
+    
+    navigate('/signin', { 
+      state: { 
+        from: {
+          pathname: `/book/${roomId}`,
+          search: window.location.search
+        }
+      } 
     });
   };
 
   return (
     <div className="container mx-auto px-4 py-8">
       <h1 className="text-3xl font-bold mb-8">Available Rooms</h1>
-      {/* Room Listing Here */}
+      {/* Render rooms here */}
     </div>
   );
 };
