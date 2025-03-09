@@ -52,25 +52,29 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
-  const register = async (userData: any) => {
-    try {
-      await axios.post('https://api.homestaykashmir.com/api/auth/register', userData);
-      toast.success('Registration successful! Please login.');
-      
-      // Preserve booking intent
-      const bookingIntent = sessionStorage.getItem('bookingIntent');
-      navigate('/signin', {
-        state: {
-          registrationRedirect: bookingIntent 
-            ? JSON.parse(bookingIntent)
-            : null
-        }
-      });
-    } catch (error: any) {
-      toast.error(error.response?.data?.message || 'Registration failed');
-      throw error;
-    }
-  };
+ const register = async (userData: any) => {
+  try {
+    await axios.post('https://api.homestaykashmir.com/api/auth/register', userData);
+    toast.success('Registration successful! Please login.');
+    
+    // Clear any existing booking intent
+    sessionStorage.removeItem('bookingIntent');
+    
+    // Get registration redirect from state
+    const registrationRedirect = sessionStorage.getItem('registrationRedirect');
+    
+    navigate('/signin', {
+      state: {
+        registrationRedirect: registrationRedirect 
+          ? JSON.parse(registrationRedirect)
+          : null
+      }
+    });
+  } catch (error: any) {
+    toast.error(error.response?.data?.message || 'Registration failed');
+    throw error;
+  }
+};
 
   // logout and updateProfile remain same...
 
