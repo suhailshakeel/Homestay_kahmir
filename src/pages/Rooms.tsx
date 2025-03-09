@@ -12,38 +12,42 @@ const Rooms: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
 
-  // Check authentication
+  // Check authentication and handle URL parameters
   useEffect(() => {
-    const checkAuth = async () => {
+    const checkAuth = () => {
       const userToken = localStorage.getItem('token');
       const isAuth = !!userToken;
       setIsAuthenticated(isAuth);
 
-      // Check for redirect URL in sessionStorage (after sign-in)
+      // If authenticated, check URL params for booking redirection
       if (isAuth) {
-        const redirectUrl = sessionStorage.getItem('redirectAfterSignIn');
-        if (redirectUrl) {
-          sessionStorage.removeItem('redirectAfterSignIn');
-          navigate(redirectUrl);
+        // Get URL search parameters
+        const searchParams = new URLSearchParams(window.location.search);
+        const bookingRoomId = searchParams.get('bookingRoom');
+        
+        if (bookingRoomId) {
+          // Remove param from URL to prevent repeated redirects
+          const newUrl = window.location.pathname;
+          window.history.replaceState({}, document.title, newUrl);
+          
+          // Redirect to booking page
+          navigate(`/book/${bookingRoomId}`);
         }
       }
     };
     checkAuth();
-  }, [navigate]);
+  }, [navigate, location]);
 
-  // Check for direct booking URLs
+  // Detect direct booking URLs
   useEffect(() => {
-    // Parse the current URL
-    const currentPath = window.location.pathname;
-    const currentUrl = window.location.href;
+    const path = window.location.pathname;
     
-    // If this is a direct booking URL
-    if (currentPath.includes('/book/')) {
-      if (!isAuthenticated) {
-        // Save the full URL to redirect back after authentication
-        sessionStorage.setItem('redirectAfterSignIn', currentPath);
-        navigate('/signin');
-      }
+    // If this is a direct booking URL and user is not authenticated
+    if (path.startsWith('/book/') && !isAuthenticated) {
+      const roomId = path.split('/book/')[1];
+      
+      // Redirect to sign-in with room ID as a query parameter
+      navigate(`/signin?bookingRoom=${roomId}`);
     }
   }, [isAuthenticated, navigate]);
 
@@ -66,9 +70,8 @@ const Rooms: React.FC = () => {
   // Handle booking a room
   const handleBookRoom = (roomId: string) => {
     if (!isAuthenticated) {
-      // Save the booking URL to redirect after authentication
-      sessionStorage.setItem('redirectAfterSignIn', `/book/${roomId}`);
-      navigate('/signin');
+      // Redirect to sign-in with the room ID as a query parameter
+      navigate(`/signin?bookingRoom=${roomId}`);
       return;
     }
     navigate(`/book/${roomId}`);
