@@ -11,44 +11,47 @@ const SignIn = () => {
   const location = useLocation();
   const { user, isAuthenticated } = useAuth();
 
-  useEffect(() => {
-    if (isAuthenticated && user) {
-      // Get redirect sources in priority order
-      const redirectSources = {
-        fromState: location.state?.from,
-        sessionStorage: sessionStorage.getItem('bookingIntent'),
-        registrationRedirect: location.state?.registrationRedirect
-      };
+useEffect(() => {
+  if (isAuthenticated && user) {
+    // Get redirect sources with corrected priority
+    const redirectSources = {
+      registrationRedirect: location.state?.registrationRedirect,
+      protectedRouteState: location.state?.from,
+      sessionStorage: sessionStorage.getItem('bookingIntent')
+    };
 
-      // Clean up storage
-      sessionStorage.removeItem('bookingIntent');
+    // Clean up storage
+    sessionStorage.removeItem('bookingIntent');
 
-      // Determine final path
-      let finalPath = '/profile';
-      let finalSearch = '';
+    // Determine final path
+    let finalPath = '/profile';
+    let finalSearch = '';
 
-      if (redirectSources.fromState) {
-        finalPath = redirectSources.fromState.pathname;
-        finalSearch = redirectSources.fromState.search;
-      } else if (redirectSources.sessionStorage) {
-        const stored = JSON.parse(redirectSources.sessionStorage);
-        finalPath = stored.path;
-        finalSearch = stored.search;
-      } else if (redirectSources.registrationRedirect) {
-        const stored = redirectSources.registrationRedirect;
-        finalPath = stored.path;
-        finalSearch = stored.search;
-      }
-
-      // Admin override
-      if (user.role === 'admin') finalPath = '/admin';
-
-      navigate(
-        { pathname: finalPath, search: finalSearch },
-        { replace: true }
-      );
+    // Priority order:
+    // 1. Registration redirect
+    // 2. ProtectedRoute state
+    // 3. Session storage
+    if (redirectSources.registrationRedirect) {
+      finalPath = redirectSources.registrationRedirect.path;
+      finalSearch = redirectSources.registrationRedirect.search;
+    } else if (redirectSources.protectedRouteState) {
+      finalPath = redirectSources.protectedRouteState.pathname;
+      finalSearch = redirectSources.protectedRouteState.search;
+    } else if (redirectSources.sessionStorage) {
+      const stored = JSON.parse(redirectSources.sessionStorage);
+      finalPath = stored.path;
+      finalSearch = stored.search;
     }
-  }, [isAuthenticated, navigate, location.state, user]);
+
+    // Admin override
+    if (user.role === 'admin') finalPath = '/admin';
+
+    navigate(
+      { pathname: finalPath, search: finalSearch },
+      { replace: true }
+    );
+  }
+}, [isAuthenticated, navigate, location.state, user]);
 
   return (
     <AuthLayout 
