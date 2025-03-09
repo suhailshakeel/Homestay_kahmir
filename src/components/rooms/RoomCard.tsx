@@ -3,12 +3,14 @@ import { MapPin, Wifi, Coffee, Car, ThermometerSun, Trees, Waves, Snowflake } fr
 import PhotoCarousel from '../photos/PhotoCarousel';
 import PhotoGallery from '../photos/PhotoGallary';
 
-// Interfaces remain the same as in your original code
+interface RoomCardProps {
+  room: Room;
+  onBook: () => void;
+}
 
 const RoomCard: React.FC<RoomCardProps> = ({ room, onBook }) => {
   const [showGallery, setShowGallery] = useState(false);
-  
-  // Corrected template literal syntax
+
   const locationStr = room.location?.lat && room.location?.lng
     ? `${room.location.lat}, ${room.location.lng}`
     : "Location unavailable";
