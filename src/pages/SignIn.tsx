@@ -8,50 +8,45 @@ import { useAuth } from '../contexts/AuthContext';
 const SignIn = () => {
   const [isHomeStayer, setIsHomeStayer] = useState(false);
   const navigate = useNavigate();
+  const { isAuthenticated } = useAuth();
   const location = useLocation();
-  const { user, isAuthenticated } = useAuth();
 
-useEffect(() => {
-  if (isAuthenticated && user) {
-    // Get redirect sources with corrected priority
-    const redirectSources = {
-      registrationRedirect: location.state?.registrationRedirect,
-      protectedRouteState: location.state?.from,
-      sessionStorage: sessionStorage.getItem('bookingIntent')
-    };
-
-    // Clean up storage
-    sessionStorage.removeItem('bookingIntent');
-
-    // Determine final path
-    let finalPath = '/profile';
-    let finalSearch = '';
-
-    // Priority order:
-    // 1. Registration redirect
-    // 2. ProtectedRoute state
-    // 3. Session storage
-    if (redirectSources.registrationRedirect) {
-      finalPath = redirectSources.registrationRedirect.path;
-      finalSearch = redirectSources.registrationRedirect.search;
-    } else if (redirectSources.protectedRouteState) {
-      finalPath = redirectSources.protectedRouteState.pathname;
-      finalSearch = redirectSources.protectedRouteState.search;
-    } else if (redirectSources.sessionStorage) {
-      const stored = JSON.parse(redirectSources.sessionStorage);
-      finalPath = stored.path;
-      finalSearch = stored.search;
+  // Extract the booking URL if we came directly from a booking link
+  useEffect(() => {
+    // If we came directly from a URL like /book/123, capture it as pendingBookingRoomId
+    const path = location.state?.from?.pathname || '';
+    if (path.startsWith('/book/')) {
+      const roomId = path.split('/book/')[1];
+      if (roomId) {
+        // Store the roomId in both places for redundancy
+        window.__pendingBookingRoomId__ = roomId;
+        localStorage.setItem('pendingBookingRoomId', roomId);
+        console.log('Stored pending booking ID from direct URL:', roomId);
+      }
     }
+  }, [location]);
 
-    // Admin override
-    if (user.role === 'admin') finalPath = '/admin';
-
-    navigate(
-      { pathname: finalPath, search: finalSearch },
-      { replace: true }
-    );
-  }
-}, [isAuthenticated, navigate, location.state, user]);
+  // Check for pending booking when component mounts or auth state changes
+  useEffect(() => {
+    if (isAuthenticated) {
+      // Get the pending booking room ID from either source
+      const pendingRoomId = localStorage.getItem('pendingBookingRoomId') || 
+                            window.__pendingBookingRoomId__;
+      
+      if (pendingRoomId) {
+        console.log('Redirecting to booking page for room:', pendingRoomId);
+        
+        // Clear storage
+        localStorage.removeItem('pendingBookingRoomId');
+        if (window.__pendingBookingRoomId__) {
+          window.__pendingBookingRoomId__ = null;
+        }
+        
+        // Redirect to booking page
+        navigate(`/book/${pendingRoomId}`);
+      }
+    }
+  }, [isAuthenticated, navigate]);
 
   return (
     <AuthLayout 
