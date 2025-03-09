@@ -55,7 +55,21 @@ router.get('/', async (req, res) => {
 
     // Transform and validate room data
     rooms = rooms.map(room => {
-      const nearbyPlacesMap = room.nearbyPlaces || new Map();
+      let hospital = 'N/A';
+      let market = 'N/A';
+      let tourist = [];
+      
+      try {
+        const nearbyPlacesMap = room.nearbyPlaces || new Map();
+        hospital = nearbyPlacesMap.get('hospital')?.available ? nearbyPlacesMap.get('hospital').distance?.toString() || 'N/A' : 'N/A';
+        market = nearbyPlacesMap.get('market')?.available ? nearbyPlacesMap.get('market').distance?.toString() || 'N/A' : 'N/A';
+        tourist = nearbyPlacesMap.get('tourist')?.available 
+          ? (Array.isArray(nearbyPlacesMap.get('tourist').distance) ? nearbyPlacesMap.get('tourist').distance : []).map(d => d.toString())
+          : [];
+      } catch (transformError) {
+        console.error(`Error transforming nearbyPlaces for room ${room._id}:`, transformError);
+      }
+
       return {
         _id: room._id,
         title: room.title || 'Untitled Room',
@@ -69,11 +83,9 @@ router.get('/', async (req, res) => {
         images: room.images || [],
         amenities: room.amenities || [],
         nearbyPlaces: {
-          hospital: nearbyPlacesMap.get('hospital')?.available ? nearbyPlacesMap.get('hospital').distance?.toString() || 'N/A' : 'N/A',
-          market: nearbyPlacesMap.get('market')?.available ? nearbyPlacesMap.get('market').distance?.toString() || 'N/A' : 'N/A',
-          tourist: nearbyPlacesMap.get('tourist')?.available 
-            ? (Array.isArray(nearbyPlacesMap.get('tourist').distance) ? nearbyPlacesMap.get('tourist').distance : []).map(d => d.toString())
-            : []
+          hospital,
+          market,
+          tourist
         },
         owner: room.owner || null,
         status: room.status || 'available',
@@ -88,7 +100,7 @@ router.get('/', async (req, res) => {
     res.json(rooms);
   } catch (error) {
     console.error('Error fetching rooms:', error);
-    res.status(500).json({ message: 'Server error', error: error.message });
+    res.status(500).json({ message: 'Server error', error: error.message, stack: error.stack });
   }
 });
 
@@ -104,7 +116,21 @@ router.get('/:id', async (req, res) => {
     }
 
     // Transform and validate room data
-    const nearbyPlacesMap = room.nearbyPlaces || new Map();
+    let hospital = 'N/A';
+    let market = 'N/A';
+    let tourist = [];
+    
+    try {
+      const nearbyPlacesMap = room.nearbyPlaces || new Map();
+      hospital = nearbyPlacesMap.get('hospital')?.available ? nearbyPlacesMap.get('hospital').distance?.toString() || 'N/A' : 'N/A';
+      market = nearbyPlacesMap.get('market')?.available ? nearbyPlacesMap.get('market').distance?.toString() || 'N/A' : 'N/A';
+      tourist = nearbyPlacesMap.get('tourist')?.available 
+        ? (Array.isArray(nearbyPlacesMap.get('tourist').distance) ? nearbyPlacesMap.get('tourist').distance : []).map(d => d.toString())
+        : [];
+    } catch (transformError) {
+      console.error(`Error transforming nearbyPlaces for room ${room._id}:`, transformError);
+    }
+
     const transformedRoom = {
       _id: room._id,
       title: room.title || 'Untitled Room',
@@ -118,11 +144,9 @@ router.get('/:id', async (req, res) => {
       images: room.images || [],
       amenities: room.amenities || [],
       nearbyPlaces: {
-        hospital: nearbyPlacesMap.get('hospital')?.available ? nearbyPlacesMap.get('hospital').distance?.toString() || 'N/A' : 'N/A',
-        market: nearbyPlacesMap.get('market')?.available ? nearbyPlacesMap.get('market').distance?.toString() || 'N/A' : 'N/A',
-        tourist: nearbyPlacesMap.get('tourist')?.available 
-          ? (Array.isArray(nearbyPlacesMap.get('tourist').distance) ? nearbyPlacesMap.get('tourist').distance : []).map(d => d.toString())
-          : []
+        hospital,
+        market,
+        tourist
       },
       owner: room.owner || null,
       status: room.status || 'available',
@@ -136,12 +160,8 @@ router.get('/:id', async (req, res) => {
     console.log('Transformed room response:', transformedRoom); // Debug log
     res.json(transformedRoom);
   } catch (error) {
-    console.error('Error fetching room:', error); // Detailed error log
-    res.status(500).json({ 
-      message: 'Server error', 
-      error: error.message, 
-      stack: error.stack // Include stack trace for debugging
-    });
+    console.error('Error fetching room:', error);
+    res.status(500).json({ message: 'Server error', error: error.message, stack: error.stack });
   }
 });
 
@@ -191,7 +211,7 @@ router.post('/', auth, upload.array('images', 10), async (req, res) => {
     res.status(201).json(room);
   } catch (error) {
     console.error('Error creating room:', error);
-    res.status(500).json({ message: 'Server error' });
+    res.status(500).json({ message: 'Server error', error: error.message, stack: error.stack });
   }
 });
 
@@ -241,7 +261,7 @@ router.post('/:id/book', auth, upload.array('documents', 5), async (req, res) =>
     });
   } catch (error) {
     console.error('Error booking room:', error);
-    res.status(500).json({ message: 'Server error' });
+    res.status(500).json({ message: 'Server error', error: error.message, stack: error.stack });
   }
 });
 
@@ -283,7 +303,7 @@ router.put('/:id', auth, upload.array('images', 10), async (req, res) => {
     res.json(updatedRoom);
   } catch (error) {
     console.error('Error updating room:', error);
-    res.status(500).json({ message: 'Server error' });
+    res.status(500).json({ message: 'Server error', error: error.message, stack: error.stack });
   }
 });
 
@@ -303,7 +323,7 @@ router.delete('/:id', auth, async (req, res) => {
     res.json({ message: 'Room deleted successfully' });
   } catch (error) {
     console.error('Error deleting room:', error);
-    res.status(500).json({ message: 'Server error' });
+    res.status(500).json({ message: 'Server error', error: error.message, stack: error.stack });
   }
 });
 
