@@ -5,11 +5,13 @@ import { useAuth } from '../contexts/AuthContext';
 interface ProtectedRouteProps {
   children: React.ReactNode;
   allowedRoles?: ('user' | 'home-stayer' | 'admin')[];
+  redirectPath?: string;
 }
 
 const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ 
   children, 
-  allowedRoles = ['user', 'home-stayer', 'admin']
+  allowedRoles = ['user', 'home-stayer', 'admin'],
+  redirectPath = '/signin'
 }) => {
   const { user, isAuthenticated, loading } = useAuth();
   const location = useLocation();
@@ -23,7 +25,7 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
   }
 
   if (!isAuthenticated) {
-    return <Navigate to="/signin" state={{ from: location }} replace />;
+    return <Navigate to={redirectPath} state={{ from: location }} replace />;
   }
 
   if (user && !allowedRoles.includes(user.role)) {
