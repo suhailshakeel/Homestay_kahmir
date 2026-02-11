@@ -8,6 +8,6 @@ export default defineConfig({
     exclude: ['lucide-react'],
   },
   preview: {
-    allowedHosts: ["www.homestaykashmir.com"], // Allow your domain 
+    allowedHosts: ["homestaykahmir-production.up.railway.app"], // Allow your domain 
   },
 });
